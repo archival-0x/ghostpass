@@ -51,23 +51,16 @@ ghostpass destruct <session>
 
 '''
 
-COMMANDS = [
-    'help',
-    'init',
-    'open',
-    'add',
-    'remove',
-    'view',
-    'list',
-    'encrypt',
-    'decrypt',
-    'destruct'
-]
+def man(argument):
+    for k, v in consts.COMMANDS.items():
+        if k == argument:
+            print "\nHelp - " + k
+            print v
 
 def check_arg(argument):
-    if not argument in COMMANDS:
+    if not argument in consts.COMMANDS.keys():
         print "\nCommand '" + str(argument) + "' not found! Please specify one of these:\n"
-        for arg in COMMANDS:
+        for arg in consts.COMMANDS:
             print arg
         print "\nFor more about each command individually, use 'ghostpass help <command>'"
         exit(1)
@@ -91,12 +84,18 @@ def main():
     # Check if specified command is valid
     check_arg(command)
 
+    if len(args.command) == 2:
+        value = args.command[1]
+
     # Print help for specified argument
     if command == "help":
         # Check if next value is a valid argument
-        check_arg(args.command[1])
+        check_arg(value)
         # Print help for specific command
+        man(value)
 
+    # Initialize new session
+    elif command == ""
 
 if __name__ == '__main__':
     main()
