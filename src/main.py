@@ -1,22 +1,39 @@
 #!/usr/bin/env python3
 
-import names
-import logging
 import argparse
-
-from getpass import getpass
+import sys
+import readline
+import glob
 
 import consts
 import ghostpass
 
+from getpass import getpass
+from consts import Color as col
 
+def pathcomplete(text, state):
+    """
+    This is the tab completer for systems paths.
+    Only tested on *nix systems
+    """
+    line = readline.get_line_buffer().split()
 
-'''
-    man(argument)
-        - helper manpages-style method for displaying information on positional
-        arguments and any details
-'''
+    # replace ~ with the user's home dir. See https://docs.python.org/2/library/os.path.html
+    if '~' in text:
+        text = os.path.expanduser('~')
+
+    # autocomplete directories with having a trailing slash
+    if os.path.isdir(text):
+        text += '/'
+
+    return [x for x in glob.glob(text + '*')][state]
+
 def man(argument):
+    '''
+    helper manpages-style method for displaying information on positional
+    arguments and any details
+    '''
+
     # Print header if no arg is provided
     if argument is None or argument == "all":
         print "\nAvailable Commands (enter ghostpass help <command>) for more information\n"
@@ -33,14 +50,20 @@ def man(argument):
         if argument is None or argument == "all":
             print k
 
+
 def check_arg(argument):
+    '''
+    ensures that passed argument can be supplied
+    '''
     if not argument in consts.COMMANDS.keys():
-        print "\nCommand '" + str(argument) + "' not found! Please specify one of these:\n"
+        print "Command '" + str(argument) + "' not found! Please specify one of these:\n"
+        sys.stdout.write("\t")
         for arg in consts.COMMANDS:
-            print arg
-        print "\nFor more about each command individually, use 'ghostpass help <command>'"
+            sys.stdout.write("" + arg + " ")
+        print "\n\nFor more about each command individually, use 'ghostpass help <command>'"
         return 1
     return 0
+
 
 def main():
     # Initialize parser
@@ -65,23 +88,36 @@ def main():
 
     # Check if len of arguments is 2
     if len(args.command) > 2:
-        raise ghostpass.GhostpassException("extraneous argument provided")
+        raise ghostpass.GhostpassException("extraneous argument(s) provided")
 
     # Print help for specified argument
     if command == "help":
-        # Check if next value is a valid argument
-        if check_arg(command) != 0:
-            raise ghostpass.GhostpassException("invalid command")
 
         # Print help for specific command (if passed)
         if len(args.command) == 2:
             man(args.command[1])
-        elif len(args.command) < 2:
+        elif len(args.command) == 1:
             man(None)
 
     # Initialize new session
+    # TODO: password and path args (unsafe)
     elif command == "init":
-        print command
+
+        # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
+        gp = ghostpass.Ghostpass()
+        print "[*] Instantiating Ghostpass instance: ", col.C, gp.uuid,  col.W, "\n"
+        masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+
+        readline.set_completer_delims('\t')
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer(pathcomplete)
+        corpus_path = raw_input("> Enter CORPUS FILE PATH: ")
+
+        gp.init_state(masterpassword, corpus_path)
+
+        del masterpassword
+
+
     elif command == "open":
         print command
 

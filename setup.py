@@ -41,6 +41,17 @@ setup(
         'console_scripts': [
             'ghostpass=src.main:main'
         ],
-    }
-    # TODO: packages, etc.
+    },
+    install_requires=[
+        'names',
+        'cryptography',
+    ],
+    classifiers=[
+        'Development Status :: 1 - Planning',
+        'Intended Audience :: End Users/Desktop',
+        'Environment :: Console',
+        'Natural Language :: English',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+    ]
 )
