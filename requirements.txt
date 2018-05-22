@@ -1,0 +1,2 @@
+bitstring==3.1.5
+names==0.3.0

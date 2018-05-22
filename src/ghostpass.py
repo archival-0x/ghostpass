@@ -2,6 +2,8 @@ import names
 import random
 import hashlib
 
+import crypto
+
 from consts import Color as color
 
 # Define a class that inherits Exception
@@ -30,7 +32,7 @@ class Ghostpass(object):
         '''
         self.state = 1 # activation state
         self.password = None # represents master password
-        self.corpus = [] # represents list of all words in a corpus after file IO
+
 
     def _decorator(func):
         '''
@@ -48,6 +50,7 @@ class Ghostpass(object):
             return func(self, *params)
         return state_check
 
+
     @_decorator
     def init_state(self, password, corpus_path):
         '''
@@ -61,11 +64,16 @@ class Ghostpass(object):
         self.password = hashlib.sha512(password).hexdigest()
 
         # convert path into Markov-chain cipher
+        if corpus_path == "":
+            raise GhostpassException("corpus path is not optional")
+
+        self.markov = crypto.MarkovHelper(corpus_path)
+        self.markov.add_text()
 
         return 0
 
 
     @_decorator
-    def create_output(self):
+    def export(self):
         # export object as JSON, and store in ~/.config/ghostpass
         return 0

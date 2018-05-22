@@ -4,12 +4,14 @@ import argparse
 import sys
 import readline
 import glob
+import logging
 
 import consts
 import ghostpass
 
 from getpass import getpass
 from consts import Color as col
+
 
 def pathcomplete(text, state):
     """
@@ -74,21 +76,23 @@ def main():
     args =  parser.parse_args()
 
     # Configure logging based on verbosity
-    if args.verbosity == "1":
-        log_level = logging.INFO
-    elif args.verbosity == "2":
+    if args.verbosity == 2:
         log_level = logging.DEBUG
 
     # Set command as first argument provided
     command = args.command[0]
 
     # Check if specified command is valid
+    logging.debug("Checking if provided argument is correct")
     if check_arg(command) != 0:
         raise ghostpass.GhostpassException("invalid command")
 
     # Check if len of arguments is 2
+    logging.debug("Checking if extra arguments were provided (max 2)")
     if len(args.command) > 2:
         raise ghostpass.GhostpassException("extraneous argument(s) provided")
+
+    logging.debug("Performing argument checking")
 
     # Print help for specified argument
     if command == "help":
@@ -104,22 +108,37 @@ def main():
     elif command == "init":
 
         # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
+        logging.debug("Instantiating ghostpass object")
         gp = ghostpass.Ghostpass()
+
+        # grabbing user input for master password and corpus path
         print "[*] Instantiating Ghostpass instance: ", col.C, gp.uuid,  col.W, "\n"
         masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
 
+        logging.debug("Setting Unix path autocomplete")
         readline.set_completer_delims('\t')
         readline.parse_and_bind("tab: complete")
         readline.set_completer(pathcomplete)
         corpus_path = raw_input("> Enter CORPUS FILE PATH: ")
 
+        # initializing state with password and corpus
+        logging.debug("Initializing ghostpass object state")
         gp.init_state(masterpassword, corpus_path)
 
+        # destroy cleartext password so is not cached
         del masterpassword
 
+        # export ghostpass object to encrypted JSON file
+        logging.debug("Exporting ghostpass to JSON")
+        gp.export()
 
     elif command == "open":
         print command
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        # ensure that session info is backed up into JSON
+        print "[*] Abrupt exit detected. Shutting down safely."
+        exit(1)
