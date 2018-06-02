@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 import argparse
 import sys
@@ -87,12 +87,24 @@ def main():
     if check_arg(command) != 0:
         raise ghostpass.GhostpassException("invalid command")
 
-    # Check if len of arguments is 2
+    # Check if len of arguments not over 2
     logging.debug("Checking if extra arguments were provided (max 2)")
-    if len(args.command) > 2:
+    if command != "decrypt" and len(args.command) > 2:
+        raise ghostpass.GhostpassException("extraneous argument(s) provided")
+    elif command == "decrypt" and len(args.command) > 3:
         raise ghostpass.GhostpassException("extraneous argument(s) provided")
 
-    logging.debug("Performing argument checking")
+    # Preemptive argument checking to see if necessary field is provided
+    # REQUIRED - add, remove, view, encrypt
+    # OPTIONAL - open, list, destruct
+    logging.debug("Checking if specific commands satisfy with second argument arguments")
+    if command in ["add", "remove", "view", "encrypt"]:
+        # Check if field argument is present
+        if len(args.command) != 2:
+            man(command)
+            raise ghostpass.GhostpassException("{} command requires field argument".format(command))
+
+    logging.debug("Performing actual argument checking")
 
     # Print help for specified argument
     if command == "help":
@@ -104,7 +116,6 @@ def main():
             man(None)
 
     # Initialize new session
-    # TODO: password and path args (unsafe)
     elif command == "init":
 
         # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
@@ -133,7 +144,28 @@ def main():
         gp.export()
 
     elif command == "open":
-        print command
+        if len(arg.commands) == 1:
+            # TODO: perform checking to see if only one session exists
+            print ""
+
+    elif command == "add":
+        print args.command[1]
+
+    elif command == "remove":
+        print args.command[1]
+
+    elif command == "list":
+        print args.command[1]
+
+    elif command == "encrypt":
+        print args.command[1]
+
+    elif command == "decrypt":
+        print args.command[1], args.command[2]
+
+    elif command == "destruct":
+        print args.command[1]
+
 
 if __name__ == '__main__':
     try:

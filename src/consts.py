@@ -6,6 +6,16 @@
 NAME = "ghostpass"
 VERSION = "0.0.1"
 
+LOGO = """
+  ________.__                    __
+ /  _____/|  |__   ____  _______/  |____________    ______ ______
+/   \  ___|  |  \ /  _ \/  ___/\   __\____ \__  \  /  ___//  ___/
+\    \_\  \   Y  (  <_> )___ \  |  | |  |_> > __ \_\___ \ \___ \
+ \______  /___|  /\____/____  > |__| |   __(____  /____  >____  >
+        \/     \/           \/       |__|       \/     \/     \/
+"""
+
+# Class for color variables, inheritable throughout entirety of code
 class Color:
     W = '\033[0m'  # white (normal)
     R = '\033[31m'  # red
@@ -16,6 +26,7 @@ class Color:
     C = '\033[36m'  # cyan
     GR = '\033[37m' # gray
 
+# dict represents all of our commands, plus there respective verbose help text
 COMMANDS = {
     'help': """
 ghostpass help <command>
