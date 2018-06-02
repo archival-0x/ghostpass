@@ -57,8 +57,7 @@ ghostpass view <field>
 
 ghostpass list <session>
     - Shows all entries and associated IDs in current session
-    - If only one session exists and session argument not provided,
-    that is opened as default
+    - If no argument is present, all available sessions are listed
 
 ghostpass encrypt <corpus>
     - Creates encrypted ciphertext with specified corpus of current session

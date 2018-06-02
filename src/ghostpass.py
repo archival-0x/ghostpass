@@ -1,16 +1,19 @@
 import names
 import random
 import hashlib
+import jsonpickle
 
 import crypto
+import consts
 
 from consts import Color as color
 
-# Define a class that inherits Exception
+# Define an exception that inherits Exception
 class GhostpassException(Exception):
     def __init__(self, message):
         print "[!] Error: ", color.R, message, color.W
         exit(1)
+
 
 '''
 Initalization Process
@@ -32,7 +35,6 @@ class Ghostpass(object):
         '''
         self.state = 1 # activation state
         self.password = None # represents master password
-
 
     def _decorator(func):
         '''
@@ -67,13 +69,20 @@ class Ghostpass(object):
         if corpus_path == "":
             raise GhostpassException("corpus path is not optional")
 
+        # generate markov chain cipher
         self.markov = crypto.MarkovHelper(corpus_path)
         self.markov.add_text()
 
-        return 0
+        # since cleartext password is copied to object, make sure to delete
+        del password
 
+        return 0
 
     @_decorator
     def export(self):
-        # export object as JSON, and store in ~/.config/ghostpass
+
+        # Export to new JSON file
+        with open(consts.DEFAULT_CONFIG_PATH + "/" + self.uuid + ".json", "w+") as f:
+            f.write(jsonpickle.encode(self))
+        f.close()
         return 0

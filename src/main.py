@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import os
 import readline
 import glob
 import logging
@@ -12,12 +13,15 @@ import ghostpass
 from getpass import getpass
 from consts import Color as col
 
+def session_check(path):
+    return 0
+
 
 def pathcomplete(text, state):
-    """
+    '''
     This is the tab completer for systems paths.
     Only tested on *nix systems
-    """
+    '''
     line = readline.get_line_buffer().split()
 
     # replace ~ with the user's home dir. See https://docs.python.org/2/library/os.path.html
@@ -30,6 +34,7 @@ def pathcomplete(text, state):
 
     return [x for x in glob.glob(text + '*')][state]
 
+
 def man(argument):
     '''
     helper manpages-style method for displaying information on positional
@@ -38,7 +43,7 @@ def man(argument):
 
     # Print header if no arg is provided
     if argument is None or argument == "all":
-        print "\nAvailable Commands (enter ghostpass help <command>) for more information\n"
+        print "-----------\nAvailable Commands\n-----------\n"
     else:
         check_arg(argument)
 
@@ -46,12 +51,13 @@ def man(argument):
     for k, v in consts.COMMANDS.items():
         # print specific help menu for argument
         if k == argument:
+            print "-----------"
             print "\nHelp - " + k
             print v
         # otherwise, print available args
         if argument is None or argument == "all":
             print k
-
+    print "-----------\nEnter ghostpass help <command> for more information about a specific command\n"
 
 def check_arg(argument):
     '''
@@ -78,6 +84,17 @@ def main():
     # Configure logging based on verbosity
     if args.verbosity == 2:
         log_level = logging.DEBUG
+
+    # Check to see if config path exists
+    logging.debug("Checking if config path exists")
+    if not os.path.exists(consts.DEFAULT_CONFIG_PATH):
+        # prevent race condition, as specified in
+        # https://stackoverflow.com/questions/273192/how-can-i-create-a-directory-if-it-does-not-exist
+        try:
+            os.makedirs(consts.DEFAULT_CONFIG_PATH)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
     # Set command as first argument provided
     command = args.command[0]
@@ -144,8 +161,10 @@ def main():
         gp.export()
 
     elif command == "open":
+
+        # TODO: perform checking to see if only one session exists
+        logging.debug("Checking to see if only one session exists")
         if len(arg.commands) == 1:
-            # TODO: perform checking to see if only one session exists
             print ""
 
     elif command == "add":
@@ -155,7 +174,20 @@ def main():
         print args.command[1]
 
     elif command == "list":
-        print args.command[1]
+
+        # if only one argument is present, list all available sessions instead
+        if len(args.command) == 1:
+            logging.debug("Listing all available sessions")
+
+            # use generator to recursively check for files in sessions that are of JSON extension
+            # TODO: robustness by checking validity of session file, to ensure no invalid/malicious JSON files are present
+            sessions = [f
+                for f in os.listdir(consts.DEFAULT_CONFIG_PATH)
+                if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
+                if f.lower().endswith('.json')
+            ]
+            for s in sessions:
+                print s
 
     elif command == "encrypt":
         print args.command[1]
@@ -164,7 +196,11 @@ def main():
         print args.command[1], args.command[2]
 
     elif command == "destruct":
-        print args.command[1]
+
+        # TODO: perform checking to see if only one session exists
+        logging.debug("Checking to see if only one session exists")
+        if len(arg.commands) == 1:
+            print ""
 
 
 if __name__ == '__main__':

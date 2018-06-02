@@ -2,9 +2,12 @@
     consts.py
         Application-level constant variables
 '''
+import os
 
 NAME = "ghostpass"
 VERSION = "0.0.1"
+
+DEFAULT_CONFIG_PATH = os.path.dirname(os.path.expanduser("~") + "/.config/ghostpass/")
 
 LOGO = """
   ________.__                    __
@@ -58,8 +61,7 @@ ghostpass view <field>
     'list': """
 ghostpass list <session>
     - Shows all entries and associated IDs in current session
-    - If only one session exists and session argument not provided,
-    that is opened as default
+    - If no argument is present, all available sessions are listed
 """,
     'encrypt': """
 ghostpass encrypt <corpus>
