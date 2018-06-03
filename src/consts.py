@@ -59,9 +59,12 @@ ghostpass view <field>
     - Shows unencrypted secret associated with <field> in current session
 """,
     'list': """
-ghostpass list <session>
+ghostpass list
+    - Shows all sessions created by user
+""",
+    'secrets': """
+ghostpass secrets
     - Shows all entries and associated IDs in current session
-    - If no argument is present, all available sessions are listed
 """,
     'encrypt': """
 ghostpass encrypt <corpus>

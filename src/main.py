@@ -6,6 +6,7 @@ import os
 import readline
 import glob
 import logging
+import jsonpickle
 
 import consts
 import ghostpass
@@ -19,9 +20,10 @@ def session_check(path):
 
 def pathcomplete(text, state):
     '''
-    This is the tab completer for systems paths.
-    Only tested on *nix systems
+    path completer used for system path completion,
+    specifically for linux systems
     '''
+
     line = readline.get_line_buffer().split()
 
     # replace ~ with the user's home dir. See https://docs.python.org/2/library/os.path.html
@@ -43,7 +45,7 @@ def man(argument):
 
     # Print header if no arg is provided
     if argument is None or argument == "all":
-        print "-----------\nAvailable Commands\n-----------\n"
+        print "------------------\nAvailable Commands\n------------------\n"
     else:
         check_arg(argument)
 
@@ -58,6 +60,7 @@ def man(argument):
         if argument is None or argument == "all":
             print k
     print "-----------\nEnter ghostpass help <command> for more information about a specific command\n"
+
 
 def check_arg(argument):
     '''
@@ -85,7 +88,7 @@ def main():
     if args.verbosity == 2:
         log_level = logging.DEBUG
 
-    # Check to see if config path exists
+    # Check to see if config path exists, and if not, create it
     logging.debug("Checking if config path exists")
     if not os.path.exists(consts.DEFAULT_CONFIG_PATH):
         # prevent race condition, as specified in
@@ -113,7 +116,8 @@ def main():
 
     # Preemptive argument checking to see if necessary field is provided
     # REQUIRED - add, remove, view, encrypt
-    # OPTIONAL - open, list, destruct
+    # OPTIONAL - open, destruct
+    # NO ARGS - init, list
     logging.debug("Checking if specific commands satisfy with second argument arguments")
     if command in ["add", "remove", "view", "encrypt"]:
         # Check if field argument is present
@@ -123,6 +127,14 @@ def main():
 
     logging.debug("Performing actual argument checking")
 
+    # grab a list of all sessions within config path
+    # TODO: robustness by checking validity of session file, to ensure no invalid/malicious JSON files are present
+    sessions = [os.path.splitext(f)[0]
+        for f in os.listdir(consts.DEFAULT_CONFIG_PATH)
+        if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
+        if f.lower().endswith('.json')
+    ]
+
     # Print help for specified argument
     if command == "help":
 
@@ -131,6 +143,8 @@ def main():
             man(args.command[1])
         elif len(args.command) == 1:
             man(None)
+
+        return 0
 
     # Initialize new session
     elif command == "init":
@@ -159,15 +173,36 @@ def main():
         # export ghostpass object to encrypted JSON file
         logging.debug("Exporting ghostpass to JSON")
         gp.export()
+        return 0
 
     elif command == "open":
 
-        # TODO: perform checking to see if only one session exists
+        # if only command provided, perform checking to see if only one session exists
         logging.debug("Checking to see if only one session exists")
-        if len(arg.commands) == 1:
-            print ""
+        if len(args.command) == 1:
+
+            # if multiple sessions exist, print man, and throw exception
+            print col.O + "[*] No session name specified, checking if only one (default) session exists... [*]" + col.W
+            if len(sessions) > 1:
+                man("open")
+                raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for opening.")
+
+            # set context_session as first entry in configuration path
+            context_session = consts.DEFAULT_CONFIG_PATH + "/" + sessions[0] +".json"
+        else:
+            # otherwise, set context_session as what user specified
+            context_session = consts.DEFAULT_CONFIG_PATH + "/" + args.command[1] +".json"
+
+        # read JSON from session file
+        logging.debug("Reading from specific session")
+        jsonstring = open(context_session).read()
+        openedgp = jsonpickle.decode(jsonstring)
+
+        # TODO: dump into context.pickle / cache file
+        return 0
 
     elif command == "add":
+        # TODO: check for context file.
         print args.command[1]
 
     elif command == "remove":
@@ -175,19 +210,15 @@ def main():
 
     elif command == "list":
 
-        # if only one argument is present, list all available sessions instead
-        if len(args.command) == 1:
-            logging.debug("Listing all available sessions")
+        logging.debug("Listing all available sessions")
+        print "------------------\nAvailable Sessions\n------------------\n"
+        for s in sessions:
+            print s
+        print "\n-----------\n"
+        return 0
 
-            # use generator to recursively check for files in sessions that are of JSON extension
-            # TODO: robustness by checking validity of session file, to ensure no invalid/malicious JSON files are present
-            sessions = [f
-                for f in os.listdir(consts.DEFAULT_CONFIG_PATH)
-                if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
-                if f.lower().endswith('.json')
-            ]
-            for s in sessions:
-                print s
+    elif command == "secrets":
+        return 0
 
     elif command == "encrypt":
         print args.command[1]
@@ -197,10 +228,13 @@ def main():
 
     elif command == "destruct":
 
-        # TODO: perform checking to see if only one session exists
+        # if only command provided, perform checking to see if only one session exists
         logging.debug("Checking to see if only one session exists")
-        if len(arg.commands) == 1:
-            print ""
+        if len(args.command) == 1:
+            # if multiple sessions exist, print man, and throw exception
+            if len(sessions) > 1:
+                man("open")
+                raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for destruction.")
 
 
 if __name__ == '__main__':

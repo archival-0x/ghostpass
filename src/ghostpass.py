@@ -1,6 +1,7 @@
 import names
 import random
 import hashlib
+import json
 import jsonpickle
 
 import crypto
@@ -15,15 +16,6 @@ class GhostpassException(Exception):
         exit(1)
 
 
-'''
-Initalization Process
-
-1. Initialize new object
-2. Initalize new state with master password and corpus file
-3. Perform preemptive password encryption with master password and corpus
-4. Save state as JSON in .config/ghostpass TODO: maybe merkle tree??
-
-'''
 class Ghostpass(object):
 
     # represents global pseudorandom identifying ID for session
@@ -31,29 +23,18 @@ class Ghostpass(object):
 
     def __init__(self):
         '''
-        initializes the state of the new object, and creates the instance variables we need
+        initializes the state of the instance variables we need
         '''
-        self.state = 1 # activation state
-        self.password = None # represents master password
 
-    def _decorator(func):
-        '''
-        decorator method that encapsulates other instance methods, checking to see
-        if the activation state permits execution
-        '''
-        def state_check(self, *params):
-
-            # check if the session is actually initialized
-            if self.state != 1:
-                raise GhostpassException("session is marked as inactive / uninitialized")
-                return None
-
-            # pass positional args, since instance methods all have different parameters
-            return func(self, *params)
-        return state_check
+        self.uuid = self.uuid   # for de/serialization purposes
+        self.password = None    # represents master password (SHA512 encrypted)
+        self.data = []          # used to store key-value entries, AES encrypted with master password
 
 
-    @_decorator
+    def __repr__(self):
+        return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
+
+
     def init_state(self, password, corpus_path):
         '''
         initializes the new session, immediately hashing the master password
@@ -78,8 +59,12 @@ class Ghostpass(object):
 
         return 0
 
-    @_decorator
+
     def export(self):
+        '''
+        using jsonpickle, create a new session file that stores the specific session data.
+        the user can then re-open and "import" the object for further use and overwrite
+        '''
 
         # Export to new JSON file
         with open(consts.DEFAULT_CONFIG_PATH + "/" + self.uuid + ".json", "w+") as f:

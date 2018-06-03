@@ -55,9 +55,11 @@ ghostpass remove <field>
 ghostpass view <field>
     - Shows unencrypted secret associated with <field> in current session
 
-ghostpass list <session>
+ghostpass list
+    - Shows all sessions created by user
+
+ghostpass secrets
     - Shows all entries and associated IDs in current session
-    - If no argument is present, all available sessions are listed
 
 ghostpass encrypt <corpus>
     - Creates encrypted ciphertext with specified corpus of current session
@@ -73,3 +75,9 @@ ghostpass destruct <session>
     that is opened as default
 
 ```
+
+## TODO
+
+* `close` command to delete pickle context after opening session
+* Robust file validity to enforce no tampering
+* Uniform pickl-ing rather than JSON de/serialiazation for session inits
