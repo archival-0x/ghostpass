@@ -12,7 +12,7 @@ from consts import Color as color
 # Define an exception that inherits Exception
 class GhostpassException(Exception):
     def __init__(self, message):
-        print "[!] Error: ", color.R, message, color.W
+        print color.R + "[!] Error: " + message + color.W
         exit(1)
 
 
@@ -29,6 +29,7 @@ class Ghostpass(object):
         self.uuid = self.uuid   # for de/serialization purposes
         self.password = None    # represents master password (SHA512 encrypted)
         self.data = []          # used to store key-value entries, AES encrypted with master password
+        # TODO: timestamp
 
 
     def __repr__(self):
@@ -50,10 +51,11 @@ class Ghostpass(object):
         if corpus_path == "":
             raise GhostpassException("corpus path is not optional")
 
+        '''
         # generate markov chain cipher
         self.markov = crypto.MarkovHelper(corpus_path)
         self.markov.add_text()
-
+        '''
         # since cleartext password is copied to object, make sure to delete
         del password
 

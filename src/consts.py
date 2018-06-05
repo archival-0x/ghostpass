@@ -8,6 +8,8 @@ NAME = "ghostpass"
 VERSION = "0.0.1"
 
 DEFAULT_CONFIG_PATH = os.path.dirname(os.path.expanduser("~") + "/.config/ghostpass/")
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+PICKLE_CONTEXT = ROOT_DIR + "/" + 'context.pickle'
 
 LOGO = """
   ________.__                    __
@@ -45,6 +47,10 @@ ghostpass open <session>
     - Opens ghostpass session with master password
     - If only one session exists and session argument not provided,
     that is opened as default
+""",
+    'close': """
+ghostpass close
+    - Closes ghostpass session, if any is opened
 """,
     'add': """
 ghostpass add <field>

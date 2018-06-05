@@ -6,6 +6,8 @@ import os
 import readline
 import glob
 import logging
+import hashlib
+import pickle
 import jsonpickle
 
 import consts
@@ -13,9 +15,6 @@ import ghostpass
 
 from getpass import getpass
 from consts import Color as col
-
-def session_check(path):
-    return 0
 
 
 def pathcomplete(text, state):
@@ -196,9 +195,34 @@ def main():
         # read JSON from session file
         logging.debug("Reading from specific session")
         jsonstring = open(context_session).read()
-        openedgp = jsonpickle.decode(jsonstring)
+        _gp = jsonpickle.decode(jsonstring)
 
-        # TODO: dump into context.pickle / cache file
+        logging.debug(_gp)
+
+        # password authentication
+        logging.debug("Performing password authentication")
+        contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+        if hashlib.sha512(contextpassword).hexdigest() != _gp.password:
+            raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
+
+        # dump into pickle file
+        logging.debug("Creating and writing context.pickle file")
+        with open(consts.PICKLE_CONTEXT, 'wb') as context:
+            pickle.dump(_gp, context)
+
+        print col.G + "[*] Session {} successfully opened! [*]".format(_gp.uuid) + col.W
+        return 0
+
+    elif command == "close":
+        # check if context.pickle exists, and deletes it
+        logging.debug("Checking to see if context exists, and deleting")
+        try:
+            os.remove(consts.PICKLE_CONTEXT)
+        except OSError:
+            print col.O + "[*] No session opened, so none closed [*]" + col.W
+            pass
+
+        print col.G + "[*] Session successfully closed! [*]" + col.W
         return 0
 
     elif command == "add":
@@ -242,5 +266,6 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         # ensure that session info is backed up into JSON
-        print "[*] Abrupt exit detected. Shutting down safely."
+        # ensure proper write to pickle file, if necessary
+        print "\n[*] Abrupt exit detected. Shutting down safely."
         exit(1)

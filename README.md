@@ -46,6 +46,9 @@ ghostpass open <session>
     - If only one session exists and session argument not provided,
     that is opened as default
 
+ghostpass close
+    - Closes ghostpass session, if any is opened
+
 ghostpass add <field>
     - Adds a new secret associated with <field> to current session
 
