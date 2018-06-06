@@ -11,15 +11,6 @@ DEFAULT_CONFIG_PATH = os.path.dirname(os.path.expanduser("~") + "/.config/ghostp
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PICKLE_CONTEXT = ROOT_DIR + "/" + 'context.pickle'
 
-LOGO = """
-  ________.__                    __
- /  _____/|  |__   ____  _______/  |____________    ______ ______
-/   \  ___|  |  \ /  _ \/  ___/\   __\____ \__  \  /  ___//  ___/
-\    \_\  \   Y  (  <_> )___ \  |  | |  |_> > __ \_\___ \ \___ \
- \______  /___|  /\____/____  > |__| |   __(____  /____  >____  >
-        \/     \/           \/       |__|       \/     \/     \/
-"""
-
 # Class for color variables, inheritable throughout entirety of code
 class Color:
     W = '\033[0m'  # white (normal)
@@ -73,9 +64,10 @@ ghostpass secrets
     - Shows all entries and associated IDs in current session
 """,
     'encrypt': """
-ghostpass encrypt <corpus>
+ghostpass encrypt <corpus> <cleartext>
     - Creates encrypted ciphertext with specified corpus of current session
     - Works independent of whether user is in session or not
+    - If no session is opened, cleartext field is mandatory for session-less encryption
 """,
     'decrypt': """
 ghostpass decrypt <corpus> <ciphertext>

@@ -64,9 +64,10 @@ ghostpass list
 ghostpass secrets
     - Shows all entries and associated IDs in current session
 
-ghostpass encrypt <corpus>
+ghostpass encrypt <corpus> <cleartext>
     - Creates encrypted ciphertext with specified corpus of current session
     - Works independent of whether user is in session or not
+    - If no session is opened, cleartext field is mandatory for session-less encryption
 
 ghostpass decrypt <corpus> <ciphertext>
     - Decrypts specific ciphertext with corpus and master key

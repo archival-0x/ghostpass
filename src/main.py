@@ -3,8 +3,6 @@
 import argparse
 import sys
 import os
-import readline
-import glob
 import logging
 import hashlib
 import pickle
@@ -15,25 +13,6 @@ import ghostpass
 
 from getpass import getpass
 from consts import Color as col
-
-
-def pathcomplete(text, state):
-    '''
-    path completer used for system path completion,
-    specifically for linux systems
-    '''
-
-    line = readline.get_line_buffer().split()
-
-    # replace ~ with the user's home dir. See https://docs.python.org/2/library/os.path.html
-    if '~' in text:
-        text = os.path.expanduser('~')
-
-    # autocomplete directories with having a trailing slash
-    if os.path.isdir(text):
-        text += '/'
-
-    return [x for x in glob.glob(text + '*')][state]
 
 
 def man(argument):
@@ -106,23 +85,24 @@ def main():
     if check_arg(command) != 0:
         raise ghostpass.GhostpassException("invalid command")
 
-    # Check if len of arguments not over 2
-    logging.debug("Checking if extra arguments were provided (max 2)")
-    if command != "decrypt" and len(args.command) > 2:
-        raise ghostpass.GhostpassException("extraneous argument(s) provided")
-    elif command == "decrypt" and len(args.command) > 3:
-        raise ghostpass.GhostpassException("extraneous argument(s) provided")
-
     # Preemptive argument checking to see if necessary field is provided
-    # REQUIRED - add, remove, view, encrypt
+    # REQUIRED - add, remove, view
     # OPTIONAL - open, destruct
     # NO ARGS - init, list
     logging.debug("Checking if specific commands satisfy with second argument arguments")
-    if command in ["add", "remove", "view", "encrypt"]:
+    if command in ["add", "remove", "view"]:
         # Check if field argument is present
         if len(args.command) != 2:
             man(command)
             raise ghostpass.GhostpassException("{} command requires field argument".format(command))
+
+    # Now check for arguments with multiple fields
+    # MULTIPLE - encrypt, decrypt
+    logging.debug("Checking if extra arguments were provided (max 2)")
+    if not command in ["encrypt", "decrypt"] and len(args.command) > 2:
+        raise ghostpass.GhostpassException("extraneous argument(s) provided")
+    elif command in ["encrypt", "decrypt"] and len(args.command) > 3:
+        raise ghostpass.GhostpassException("extraneous argument(s) provided")
 
     logging.debug("Performing actual argument checking")
 
@@ -131,7 +111,6 @@ def main():
     sessions = [os.path.splitext(f)[0]
         for f in os.listdir(consts.DEFAULT_CONFIG_PATH)
         if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
-        if f.lower().endswith('.json')
     ]
 
     # Print help for specified argument
@@ -147,24 +126,17 @@ def main():
 
     # Initialize new session
     elif command == "init":
-
         # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
         logging.debug("Instantiating ghostpass object")
         gp = ghostpass.Ghostpass()
 
         # grabbing user input for master password and corpus path
-        print "[*] Instantiating Ghostpass instance: ", col.C, gp.uuid,  col.W, "\n"
+        print col.P + "[*] Instantiating Ghostpass instance: " + col.C + gp.uuid + col.P + " [*]\n" + col.W
         masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
 
-        logging.debug("Setting Unix path autocomplete")
-        readline.set_completer_delims('\t')
-        readline.parse_and_bind("tab: complete")
-        readline.set_completer(pathcomplete)
-        corpus_path = raw_input("> Enter CORPUS FILE PATH: ")
-
-        # initializing state with password and corpus
+        # initializing state with password
         logging.debug("Initializing ghostpass object state")
-        gp.init_state(masterpassword, corpus_path)
+        gp.init_state(masterpassword)
 
         # destroy cleartext password so is not cached
         del masterpassword
@@ -175,6 +147,11 @@ def main():
         return 0
 
     elif command == "open":
+
+        # checking to see if a session is already open
+        logging.debug("Checking if context file exists")
+        if os.path.isfile(consts.PICKLE_CONTEXT):
+            raise ghostpass.GhostpassException("session already open. Close before opening another one.")
 
         # if only command provided, perform checking to see if only one session exists
         logging.debug("Checking to see if only one session exists")
@@ -187,20 +164,21 @@ def main():
                 raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for opening.")
 
             # set context_session as first entry in configuration path
-            context_session = consts.DEFAULT_CONFIG_PATH + "/" + sessions[0] +".json"
+            context_session = consts.DEFAULT_CONFIG_PATH + "/" + sessions[0]
         else:
             # otherwise, set context_session as what user specified
-            context_session = consts.DEFAULT_CONFIG_PATH + "/" + args.command[1] +".json"
+            context_session = consts.DEFAULT_CONFIG_PATH + "/" + args.command[1]
 
         # read JSON from session file
         logging.debug("Reading from specific session")
         jsonstring = open(context_session).read()
         _gp = jsonpickle.decode(jsonstring)
 
-        logging.debug(_gp)
+        logging.debug(_gp) # __repr__ to validify open successful
 
         # password authentication
         logging.debug("Performing password authentication")
+        print col.P + "[*] Opening session: " + _gp.uuid + col.W
         contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         if hashlib.sha512(contextpassword).hexdigest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
@@ -220,20 +198,46 @@ def main():
             os.remove(consts.PICKLE_CONTEXT)
         except OSError:
             print col.O + "[*] No session opened, so none closed [*]" + col.W
-            pass
+            return 0
 
         print col.G + "[*] Session successfully closed! [*]" + col.W
         return 0
 
     elif command == "add":
-        # TODO: check for context file.
-        print args.command[1]
+        # check if context file exists before adding
+        logging.debug("Checking if context file exists")
+        if not os.path.isfile(consts.PICKLE_CONTEXT):
+            raise ghostpass.GhostpassException("no session has been opened")
+
+        # load object from pickle
+        logging.debug("Loading object from pickle")
+        context =  open(consts.PICKLE_CONTEXT, 'r')
+        _gp = pickle.load(context)
+        context.close()
+
+        # TODO: add
+        print col.P + "[*] Adding field: " + args.command[1] + col.W
 
     elif command == "remove":
-        print args.command[1]
+        # check if context file exists before adding
+        logging.debug("Checking if context file exists")
+        if not os.path.isfile(consts.PICKLE_CONTEXT):
+            raise ghostpass.GhostpassException("no session has been opened")
+
+        # load object from pickle
+        logging.debug("Loading object from pickle")
+        context =  open(consts.PICKLE_CONTEXT, 'r')
+        _gp = pickle.load(context)
+        context.close()
+
+        # TODO: remove - check if field exists, then delete
+
+    elif command == "stash":
+        # stashes changes made to context.pickle into original json configuration
+        return 0
 
     elif command == "list":
-
+        # recursively list all sessions
         logging.debug("Listing all available sessions")
         print "------------------\nAvailable Sessions\n------------------\n"
         for s in sessions:
@@ -245,7 +249,36 @@ def main():
         return 0
 
     elif command == "encrypt":
-        print args.command[1]
+
+        # since sessions are optional, we can check to see if it exists
+        logging.debug("Checking if context file exists. If not, temporary object will be created")
+        if os.path.isfile(consts.PICKLE_CONTEXT):
+            # load object from pickle
+            logging.debug("Loading object from pickle")
+            context =  open(consts.PICKLE_CONTEXT, 'r')
+            _gp = pickle.load(context)
+            context.close()
+            print col.P + "[*] Utilizing opened session for encryption:" + col.B + _gp.uuid + col.P + " [*]" + col.W
+        else:
+
+            # check if cleartext argument is supplied
+
+            # create a new temporary object for encryption
+            _gp = ghostpass.Ghostpass()
+            print col.P + "[*] No session opened. Please supply master password for independent session-less encryption [*]" + col.W
+            masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+
+            # initializing state with password
+            logging.debug("Initializing ghostpass object state")
+            _gp.init_state(masterpassword)
+
+            del masterpassword
+
+        # load corpus file into object
+        _gp.load_corpus(args.command[1])
+
+        # TODO: actual encryption
+        return 0
 
     elif command == "decrypt":
         print args.command[1], args.command[2]
@@ -257,8 +290,10 @@ def main():
         if len(args.command) == 1:
             # if multiple sessions exist, print man, and throw exception
             if len(sessions) > 1:
-                man("open")
+                man("destruct")
                 raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for destruction.")
+
+        # TODO: delete actual config file
 
 
 if __name__ == '__main__':
@@ -267,5 +302,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         # ensure that session info is backed up into JSON
         # ensure proper write to pickle file, if necessary
-        print "\n[*] Abrupt exit detected. Shutting down safely."
+        print col.O + "\n[*] Abrupt exit detected. Shutting down safely." + col.W
         exit(1)

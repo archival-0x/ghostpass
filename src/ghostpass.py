@@ -36,10 +36,9 @@ class Ghostpass(object):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
 
-    def init_state(self, password, corpus_path):
+    def init_state(self, password):
         '''
         initializes the new session, immediately hashing the master password
-        and loading the corpus
         '''
 
         # perform error-checking and hash using SHA512
@@ -47,20 +46,26 @@ class Ghostpass(object):
             raise GhostpassException("master password is not optional")
         self.password = hashlib.sha512(password).hexdigest()
 
-        # convert path into Markov-chain cipher
-        if corpus_path == "":
-            raise GhostpassException("corpus path is not optional")
-
-        '''
-        # generate markov chain cipher
-        self.markov = crypto.MarkovHelper(corpus_path)
-        self.markov.add_text()
-        '''
         # since cleartext password is copied to object, make sure to delete
         del password
 
         return 0
 
+
+    def load_corpus(self, corpus_path):
+        '''
+        load corpus file when doing actual encryption/decryption
+        '''
+
+        # convert path into Markov-chain cipher
+        if corpus_path == "":
+            raise GhostpassException("corpus path is not optional")
+
+        # generate markov chain cipher
+        self.markov = crypto.MarkovHelper(corpus_path)
+        self.markov.add_text()
+
+        return 0
 
     def export(self):
         '''
@@ -69,7 +74,6 @@ class Ghostpass(object):
         '''
 
         # Export to new JSON file
-        with open(consts.DEFAULT_CONFIG_PATH + "/" + self.uuid + ".json", "w+") as f:
+        with open(consts.DEFAULT_CONFIG_PATH + "/" + self.uuid, "w+") as f:
             f.write(jsonpickle.encode(self))
-        f.close()
         return 0
