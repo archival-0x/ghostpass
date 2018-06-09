@@ -1,3 +1,8 @@
+'''
+    consts.py
+        Interface for our Markov-chained cipher
+'''
+
 from bitstring import BitArray, ConstBitArray
 
 class MarkovHelper:
@@ -42,6 +47,7 @@ class MarkovHelper:
     def to_phrases(order, words):
         return [tuple([words[i+j] for j in xrange(order+1)])
             for i in xrange(len(words) - order)]
+
 
     @staticmethod
     def to_words(text):

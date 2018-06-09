@@ -22,7 +22,7 @@ class Color:
     C = '\033[36m'  # cyan
     GR = '\033[37m' # gray
 
-# dict represents all of our commands, plus there respective verbose help text
+# dict represents all of our commands, plus their respective verbose help text
 COMMANDS = {
     'help': """
 ghostpass help <command>
@@ -65,7 +65,7 @@ ghostpass list
 """,
     'secrets': """
 ghostpass secrets
-    - Shows all entries and associated IDs in current session
+    - Shows all fields and respective secrets in current session
 """,
     'encrypt': """
 ghostpass encrypt <corpus> <cleartext>

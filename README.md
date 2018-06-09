@@ -2,6 +2,12 @@
 
 Ghostpass is a dead simple password management system that enables users to distribute cleartext-like ciphertext to the open web, while still maintaining security and data integrity.
 
+Don't use this yet! I'm not done. I'm just flexing my contributions.
+
+## 0. Introduction
+
+Password management sucks. I made it better. One thing I _didn't_ make better is this intro (_TODO_)
+
 ## 1. Problems
 
 1. Web-based password managers are centralized, and data breech for undiscovered vulnerability results in catastrophic events.
@@ -65,7 +71,7 @@ ghostpass list
     - Shows all sessions created by user
 
 ghostpass secrets
-    - Shows all entries and associated IDs in current session
+    - Shows all fields and respective secrets in current session
 
 ghostpass encrypt <corpus> <cleartext>
     - Creates encrypted ciphertext with specified corpus of current session
@@ -85,6 +91,5 @@ ghostpass destruct <session>
 
 ## TODO
 
-* `close` command to delete pickle context after opening session
 * Robust file validity to enforce no tampering
 * Uniform pickl-ing rather than JSON de/serialiazation for session inits

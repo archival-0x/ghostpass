@@ -111,10 +111,10 @@ def main():
         if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
     ]
 
-    # preemptive context file checking and opening
+    # preemptive context file checking and opening - complete this for specific commands that require context file
+    logging.debug("Checking if context file exists")
     if command in ["add", "remove", "stash"]:
         # check if context file exists before adding
-        logging.debug("Checking if context file exists")
         if not os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("no session has been opened")
 
@@ -128,13 +128,11 @@ def main():
 
     # Print help for specified argument
     if command == "help":
-
         # Print help for specific command (if passed)
         if len(args.command) == 2:
             man(args.command[1])
         elif len(args.command) == 1:
             man(None)
-
         return 0
 
     # Initialize new session
@@ -209,7 +207,7 @@ def main():
         logging.debug("Checking to see if context exists, and deleting")
         try:
             os.remove(consts.PICKLE_CONTEXT)
-        except OSError:
+        except OSError: # uses exception handler in case file wasn't available in first place
             print col.O + "[*] No session opened, so none closed [*]" + col.W
             return 0
 
@@ -217,13 +215,30 @@ def main():
         return 0
 
     elif command == "add":
-        print col.P + "[*] Adding field: " + args.command[1] + col.W
+        print col.P + "[*] Adding field: " + args.command[1] + col.W + "\n"
+
+        # retrieve secret for specific field
+        secret = getpass("> Enter SECRET for field (will NOT be echoed): ")
+
+        # securely append field and secret to session context
+        _gp.add_field(args.command[1], secret)
+
+        # ensure cleartext secret is NOT cached
+        del secret
+
         return 0
 
     elif command == "remove":
+        print col.P + "[*] Removing field: " + args.command[1] + col.W
+
+        # securely remove field and secret from session context
+        _gp.remove_field(args.command[1], secret)
+        print col.G + "[*] Success! Removed {} [*]".format(args.command[1]) + col.W
+
         return 0
 
     elif command == "view":
+        print _gp.view_field(args.command[1])
         return 0
 
     elif command == "stash":
@@ -282,8 +297,12 @@ def main():
                 man("destruct")
                 raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for destruction.")
 
-        # TODO: delete actual config file
+        # check if session exists
+        logging.debug("Checking to see if specified session exists")
+        if not os.path.isfile(DEFAULT_CONFIG_PATH + args.command[1]):
+            raise ghostpass.GhostpassException("session does not exist.")
 
+        
 
 if __name__ == '__main__':
     try:
