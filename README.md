@@ -58,6 +58,9 @@ ghostpass remove <field>
 ghostpass view <field>
     - Shows unencrypted secret associated with <field> in current session
 
+ghostpass stash
+    - Commits changes made in opened session
+
 ghostpass list
     - Shows all sessions created by user
 

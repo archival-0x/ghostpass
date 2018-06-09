@@ -21,6 +21,7 @@ class Ghostpass(object):
     # represents global pseudorandom identifying ID for session
     uuid = names.get_first_name() + names.get_first_name() + str(random.randrange(0, 100))
 
+
     def __init__(self):
         '''
         initializes the state of the instance variables we need
@@ -66,6 +67,22 @@ class Ghostpass(object):
         self.markov.add_text()
 
         return 0
+
+
+    def encrypt(self):
+
+        # TODO: use AES with masterpassword to encrypt all data in pickle
+        #       markov chain cipher
+        #       return ciphertext
+        return 0
+
+    def decrypt(self):
+
+        # TODO: markov chain cipher
+        #       use AES with masterpassword to decrypt all data in ciphertext
+        #       return cleartext
+        return 0
+
 
     def export(self):
         '''

@@ -104,14 +104,27 @@ def main():
     elif command in ["encrypt", "decrypt"] and len(args.command) > 3:
         raise ghostpass.GhostpassException("extraneous argument(s) provided")
 
-    logging.debug("Performing actual argument checking")
-
     # grab a list of all sessions within config path
     # TODO: robustness by checking validity of session file, to ensure no invalid/malicious JSON files are present
     sessions = [os.path.splitext(f)[0]
         for f in os.listdir(consts.DEFAULT_CONFIG_PATH)
         if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
     ]
+
+    # preemptive context file checking and opening
+    if command in ["add", "remove", "stash"]:
+        # check if context file exists before adding
+        logging.debug("Checking if context file exists")
+        if not os.path.isfile(consts.PICKLE_CONTEXT):
+            raise ghostpass.GhostpassException("no session has been opened")
+
+        # load object from pickle
+        logging.debug("Loading object from pickle")
+        context =  open(consts.PICKLE_CONTEXT, 'r')
+        _gp = pickle.load(context)
+        context.close()
+
+    logging.debug("Performing actual argument checking")
 
     # Print help for specified argument
     if command == "help":
@@ -204,36 +217,16 @@ def main():
         return 0
 
     elif command == "add":
-        # check if context file exists before adding
-        logging.debug("Checking if context file exists")
-        if not os.path.isfile(consts.PICKLE_CONTEXT):
-            raise ghostpass.GhostpassException("no session has been opened")
-
-        # load object from pickle
-        logging.debug("Loading object from pickle")
-        context =  open(consts.PICKLE_CONTEXT, 'r')
-        _gp = pickle.load(context)
-        context.close()
-
-        # TODO: add
         print col.P + "[*] Adding field: " + args.command[1] + col.W
+        return 0
 
     elif command == "remove":
-        # check if context file exists before adding
-        logging.debug("Checking if context file exists")
-        if not os.path.isfile(consts.PICKLE_CONTEXT):
-            raise ghostpass.GhostpassException("no session has been opened")
+        return 0
 
-        # load object from pickle
-        logging.debug("Loading object from pickle")
-        context =  open(consts.PICKLE_CONTEXT, 'r')
-        _gp = pickle.load(context)
-        context.close()
-
-        # TODO: remove - check if field exists, then delete
+    elif command == "view":
+        return 0
 
     elif command == "stash":
-        # stashes changes made to context.pickle into original json configuration
         return 0
 
     elif command == "list":
@@ -249,7 +242,6 @@ def main():
         return 0
 
     elif command == "encrypt":
-
         # since sessions are optional, we can check to see if it exists
         logging.debug("Checking if context file exists. If not, temporary object will be created")
         if os.path.isfile(consts.PICKLE_CONTEXT):
@@ -260,9 +252,6 @@ def main():
             context.close()
             print col.P + "[*] Utilizing opened session for encryption:" + col.B + _gp.uuid + col.P + " [*]" + col.W
         else:
-
-            # check if cleartext argument is supplied
-
             # create a new temporary object for encryption
             _gp = ghostpass.Ghostpass()
             print col.P + "[*] No session opened. Please supply master password for independent session-less encryption [*]" + col.W
