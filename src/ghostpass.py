@@ -38,10 +38,11 @@ class Ghostpass(object):
         initializes the state of the instance variables we need
         '''
 
+        # TODO: Timestamp?? Mutex lock??
+        #       A lot more can be added in order to enable validity during session import
         self.uuid = self.uuid   # for de/serialization purposes
         self.password = None    # represents master password (SHA512 encrypted)
         self.data = []          # used to store key-value entries, AES encrypted with master password
-        # TODO: timestamp?? mutex lock??
 
 
     def __repr__(self):
@@ -50,7 +51,8 @@ class Ghostpass(object):
 
     def init_state(self, password):
         '''
-        initializes the new session, immediately hashing the master password
+        initializes the new session, immediately hashing the master password such
+        that runtime doesn't expose cleartext
         '''
 
         # perform error-checking and hash using SHA512
@@ -75,7 +77,7 @@ class Ghostpass(object):
 
         # convert path into Markov-chain cipher and generate markov chain cipher
         self.markov = crypto.MarkovHelper(corpus_path)
-        self.markov.add_text()
+        self.markov.init_mc()
 
         return 0
 

@@ -3,52 +3,117 @@
         Interface for our Markov-chained cipher
 '''
 
-from bitstring import BitArray, ConstBitArray
+import re
+
+MARKOV_START = "<START>"
+MIN_LINE_LEN = 4
 
 class MarkovHelper:
 
-    def __init__(self, model, context=3):
+    def __init__(self, model, inputstate=2):
 
         self.model = open(model, 'r').read() # read the model as a list of chars
-        self.context = context # order of reading
+        self.inputstate = inputstate         # where 2 = create bigrams
 
-        self._children = [0, {}, None]
-        self.current_token = None
-        self.pointer = self._children
-
-
-    def add_text(self):
-        '''
-        initialize a model for a language-based cipher
-        '''
-        phrases = self.to_phrases(self.context, self.to_words(self.model))
-        for p in phrases:
-            self.add_phrase(p)
-        self.update_root_count()
-
-
-    def add_phrase(self, p):
-        ptr = self._children[1]
-        for token in p:
-            if token not in ptr:
-               ptr[token] = [0, {}, None]
-
-            ptr[token][0] += 1
-        ptr = ptr[token][1]
-
-
-    def update_root_count(self):
-        tokens = self._children[1].values()
-        total = sum(map(lambda t: t[0], tokens))
-        self._children[0] = total
+        self.bigrams = []
 
 
     @staticmethod
-    def to_phrases(order, words):
-        return [tuple([words[i+j] for j in xrange(order+1)])
-            for i in xrange(len(words) - order)]
+    def repeats(words):
+        '''
+        given a list of words, count how many times each one is listed
+        '''
+
+        # create a dict to store counts of word in corpus
+    	count = {}
+
+    	for word in words:
+            # case-insensitive check
+            w = word.lower()
+
+            # add to dict, and increment if word is repeated
+    	    if w in count:
+    			count[w] = (word, count[w][1] + 1)
+    	    else:
+    			count[w] = (word, 1)
+
+        return count.values()
 
 
     @staticmethod
-    def to_words(text):
-        return text.split()
+    def mlower(word):
+        if w != MARKOV_START:
+            return w.lower()
+        else:
+            return w
+
+
+    @staticmethod
+    def make_lower(word):
+        '''
+        lowers all the words within a list or tuple except for the MARKOV_START token
+        '''
+
+    	if type(word) is list:
+    		return [self.mlower(w) for w in word]
+    	elif type(word) is tuple:
+    		return tuple([self.mlower(w) for w in word])
+
+        return self.mlower(word)
+
+
+    @staticmethod
+    def add_bigram(word1, word2):
+    	word1b = self.make_lower(word1)
+
+    	if word1b in self.bigramsDict:
+    		(w1, w2) = self.bigramsDict[word1b]
+    		w2.append(word2)
+    	else:
+    		self.bigramsDict[word1b] = (word1, [word2])
+
+
+    @staticmethod
+    def compute_probabilities(words):
+    	'''
+        given a list of words, compute the probability (in a fraction) for each word
+        '''
+
+        # check for repeats in a set of words
+    	count = self.repeats(words)
+
+    	total = sum([c[1] for c in count])
+        return [(c[0], (c[1], total)) for c in count]
+
+
+    def init_mc(self):
+        '''
+        initialize a new Markov-chained cipher
+        '''
+
+        # split sentences, get bigrams
+    	lines = [re.findall(r"\w[\w']*", line) for line
+    		in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.model)]
+    	lines = [[MARKOV_START] + line + [MARKOV_START] for line
+    		in lines if len(line) >= MIN_LINE_LEN]
+
+        # create bigrams
+    	bigrams1 = [[(line[word], line[word+1], line[word+2]) for word in range(len(line)-2)] for line in lines]
+    	bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
+    	bigrams = bigrams1 + bigrams2
+
+    	# compute markov chain
+    	# in this context, we call bigrams the pairs (input state, output state); not the best name
+    	# when the input state has more than 1 word unfortunately
+    	self.bigramsDict = {}
+
+    	for line in bigrams:
+    		for bigram in line:
+    			if wordsPerState == 1:
+    				self.add_bigram(bigram[0], bigram[1])
+    			elif wordsPerState == 2:
+    				self.add_bigram((bigram[0], bigram[1]), bigram[2])
+
+        # at this point, fullBigrams contains the markovChain with probabilities in fractions
+    	fullBigrams = bigramsDict.values()
+    	self.bigrams = [(bigram[0], self.compute_probabilities(bigram[1])) for bigram in fullBigrams]

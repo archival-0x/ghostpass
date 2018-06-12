@@ -4,16 +4,16 @@ Ghostpass is a dead simple password management system that enables users to dist
 
 Don't use this yet! I'm not done. I'm just flexing my contributions.
 
-## 0. Introduction
+## 1. Introduction
 
-Password management sucks. I made it better. One thing I _didn't_ make better is this intro (_TODO_)
-
-## 1. Problems
+### 1.1 Problems
 
 1. Web-based password managers are centralized, and data breech for undiscovered vulnerability results in catastrophic events.
-2. Modern clients (KeePass) don't enable for fast distribution across hosts, and portability to unencrypt anymore.
+2. Modern offline clients ( i.e KeePass) don't enable for fast distribution across hosts, and portability to unencrypt anymore.
 
-## 2. Core Functionality
+### 1.2 Features
+
+## 2. How does it all work?
 
 ### Encryption Process
 
@@ -88,6 +88,7 @@ ghostpass destruct <session>
     that is opened as default
 
 ```
+
 
 ## TODO
 
