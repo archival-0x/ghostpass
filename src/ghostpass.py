@@ -41,7 +41,7 @@ class Ghostpass(object):
         # TODO: Timestamp?? Mutex lock??
         #       A lot more can be added in order to enable validity during session import
         self.uuid = self.uuid   # for de/serialization purposes
-        self.password = None    # represents master password (SHA512 encrypted)
+        self.password = None    # represents master password (SHA256 encrypted)
         self.data = []          # used to store key-value entries, AES encrypted with master password
 
 
@@ -55,10 +55,10 @@ class Ghostpass(object):
         that runtime doesn't expose cleartext
         '''
 
-        # perform error-checking and hash using SHA512
+        # perform error-checking and hash using SHA256
         if password == "":
             raise GhostpassException("master password is not optional")
-        self.password = hashlib.sha512(password).hexdigest()
+        self.password = hashlib.sha256(password).hexdigest()
 
         # since cleartext password is copied to object, make sure to delete
         del password
@@ -100,10 +100,11 @@ class Ghostpass(object):
     #   (i.e username and password combos)
     ############################################################
 
-    @staticmethod
-    def _check_field_existence(field):
-        # TODO: fast self.data check
-        return True
+    def _check_field_existence(self, field):
+        if not any(f.key() == field for f in self.data):
+            return False
+        else:
+            return True
 
 
     def view_field(self, field, password):
@@ -112,13 +113,8 @@ class Ghostpass(object):
 
     def add_field(self, field, password):
         '''
-        securely add field with password to self.data, encrypting with AES immediately before commit
+        securely add field with password to self.data
         '''
-
-        # ensure that secret is not empty: secret is not optional
-        if password == "":
-            raise GhostpassException("no secret specified for field: {}".format(field))
-
         return 0
 
 

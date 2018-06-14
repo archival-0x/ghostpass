@@ -1,9 +1,14 @@
 '''
-    consts.py
-        Interface for our Markov-chained cipher
+    crypto.py
+        Interface for crytographic operations, including AES and our custom Markov-chained cipher
 '''
 
 import re
+import hashlib
+import base64
+
+from Crypto import Random
+from Crypto.Cipher import AES
 
 MARKOV_START = "<START>"
 MIN_LINE_LEN = 4
@@ -117,3 +122,33 @@ class MarkovHelper:
         # at this point, fullBigrams contains the markovChain with probabilities in fractions
     	fullBigrams = bigramsDict.values()
     	self.bigrams = [(bigram[0], self.compute_probabilities(bigram[1])) for bigram in fullBigrams]
+
+
+class AES:
+
+    def __init__(self, key):
+        self.keysize = 32 # represents 32 byte-sized key
+        self.key = key    # key has already been converted into SHA256 hash in ghostpass object
+
+
+    def aes_encrypt(self, raw):
+        raw = self._pad(raw)
+        iv = Random.new().read(AES.block_size)
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return base64.b64encode(iv + cipher.encrypt(raw))
+
+
+    def aes_decrypt(self, enc):
+        enc = base64.b64decode(enc)
+        iv = enc[:AES.block_size]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
+
+
+    def _pad(self, s):
+        return s + (self.keysize - len(s) % self.keysize) * chr(self.keysize - len(s) % self.keysize)
+
+
+    @staticmethod
+    def _unpad(s):
+        return s[:-ord(s[len(s)-1:])]

@@ -191,7 +191,7 @@ def main():
         logging.debug("Performing password authentication")
         print col.P + "[*] Opening session: " + _gp.uuid + col.W
         contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        if hashlib.sha512(contextpassword).hexdigest() != _gp.password:
+        if hashlib.sha256(contextpassword).hexdigest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
 
         # dump into pickle file
@@ -267,6 +267,9 @@ def main():
             context.close()
             print col.P + "[*] Utilizing opened session for encryption:" + col.B + _gp.uuid + col.P + " [*]" + col.W
         else:
+
+            # check for second argument, which is the cleartext for encryption
+
             # create a new temporary object for encryption
             _gp = ghostpass.Ghostpass()
             print col.P + "[*] No session opened. Please supply master password for independent session-less encryption [*]" + col.W
@@ -302,7 +305,7 @@ def main():
         if not os.path.isfile(DEFAULT_CONFIG_PATH + args.command[1]):
             raise ghostpass.GhostpassException("session does not exist.")
 
-        
+
 
 if __name__ == '__main__':
     try:
