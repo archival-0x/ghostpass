@@ -113,16 +113,35 @@ class Ghostpass(object):
 
     def add_field(self, field, password):
         '''
-        securely add field with password to self.data
+        add field with password to self.data
         '''
+
+        # check field existence
+        if _check_field_existence(field):
+            raise GhostpassException("field {} already exists!".format(field))
+
+        self.data.append({field, password})
         return 0
 
 
     def remove_field(self, field):
+
+        # check field existence
+        if not _check_field_existence(field):
+            raise GhostpassException("field {} doesn't exist!".format(field))        
+
+        return 0
+
+
+    def overwrite_field(self, field, password):
         return 0
 
 
     def stash_changes(self):
+        '''
+        encrypt fields with AES-CBC, and move changes from context into original
+        JSON
+        '''
         return 0
 
 
@@ -134,16 +153,26 @@ class Ghostpass(object):
 
 
     def encrypt(self):
-
-        # TODO: use AES with masterpassword to encrypt all data in pickle
-        #       markov chain cipher
-        #       return ciphertext
+        '''
+        encrypt fields in self.data with AES-CBC, then our Markov-chain cipher,
+        then export it as a .txt file
+        '''
         return 0
 
 
-    def decrypt(self):
-
-        # TODO: markov chain cipher
-        #       use AES with masterpassword to decrypt all data in ciphertext
-        #       return cleartext
+    def encrypt_file(self, file):
+        '''
+        encrypt cleartext file with AES-CBC, then our Markov-chain cipher,
+        then export it as a .txt file
+        '''
         return 0
+
+
+    def decrypt(ciphertext, corpus):
+        '''
+        works independently - decrypt with specified corpus fle, then decrypt with
+        AES-CBC, then export cleartext as .txt file
+        '''
+        return 0
+
+    # TODO: decrypt and store function

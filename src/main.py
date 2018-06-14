@@ -86,15 +86,14 @@ def main():
         raise ghostpass.GhostpassException("invalid command")
 
     # Preemptive argument checking to see if necessary field is provided
-    # REQUIRED - add, remove, view
-    # OPTIONAL - open, destruct
-    # NO ARGS - init, list
+    # REQUIRED - add, remove, view, destruct, encrypt, decrypt
+    # OPTIONAL - open
+    # NO ARGS - init, list, secrets
     logging.debug("Checking if specific commands satisfy with second argument arguments")
-    if command in ["add", "remove", "view"]:
-        # Check if field argument is present
-        if len(args.command) != 2:
-            man(command)
-            raise ghostpass.GhostpassException("{} command requires field argument".format(command))
+    if command in ["add", "remove", "view", "destruct", "encrypt", "decrypt"] and len(args.command) != 2:
+        man(command)
+        raise ghostpass.GhostpassException("{} command requires at least one field argument".format(command))
+
 
     # Now check for arguments with multiple fields
     # MULTIPLE - encrypt, decrypt
@@ -142,7 +141,7 @@ def main():
         gp = ghostpass.Ghostpass()
 
         # grabbing user input for master password and corpus path
-        print col.P + "[*] Instantiating Ghostpass instance: " + col.C + gp.uuid + col.P + " [*]\n" + col.W
+        print col.P + "Instantiating Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W
         masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
 
         # initializing state with password
@@ -169,7 +168,7 @@ def main():
         if len(args.command) == 1:
 
             # if multiple sessions exist, print man, and throw exception
-            print col.O + "[*] No session name specified, checking if only one (default) session exists... [*]" + col.W
+            print col.O + "No session name specified, checking if only one (default) session exists..." + col.W
             if len(sessions) > 1:
                 man("open")
                 raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for opening.")
@@ -189,7 +188,7 @@ def main():
 
         # password authentication
         logging.debug("Performing password authentication")
-        print col.P + "[*] Opening session: " + _gp.uuid + col.W
+        print col.P + "Opening session: " + _gp.uuid + col.W
         contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         if hashlib.sha256(contextpassword).hexdigest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
@@ -199,7 +198,7 @@ def main():
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
             pickle.dump(_gp, context)
 
-        print col.G + "[*] Session {} successfully opened! [*]".format(_gp.uuid) + col.W
+        print col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W
         return 0
 
     elif command == "close":
@@ -208,14 +207,14 @@ def main():
         try:
             os.remove(consts.PICKLE_CONTEXT)
         except OSError: # uses exception handler in case file wasn't available in first place
-            print col.O + "[*] No session opened, so none closed [*]" + col.W
+            print col.O + "No session opened, so none closed" + col.W
             return 0
 
-        print col.G + "[*] Session successfully closed! [*]" + col.W
+        print col.G + "Session successfully closed!" + col.W
         return 0
 
     elif command == "add":
-        print col.P + "[*] Adding field: " + args.command[1] + col.W + "\n"
+        print col.P + "Adding field: " + args.command[1] + col.W + "\n"
 
         # retrieve secret for specific field
         secret = getpass("> Enter SECRET for field (will NOT be echoed): ")
@@ -229,11 +228,11 @@ def main():
         return 0
 
     elif command == "remove":
-        print col.P + "[*] Removing field: " + args.command[1] + col.W
+        print col.P + "Removing field: " + args.command[1] + col.W
 
         # securely remove field and secret from session context
         _gp.remove_field(args.command[1], secret)
-        print col.G + "[*] Success! Removed {} [*]".format(args.command[1]) + col.W
+        print col.G + "Success! Removed {}".format(args.command[1]) + col.W
 
         return 0
 
@@ -247,6 +246,12 @@ def main():
     elif command == "list":
         # recursively list all sessions
         logging.debug("Listing all available sessions")
+
+        # if no session are available
+        if len(sessions) == 0:
+            print col.O + "No sessions available! Use `ghostpass init` to create a new one!" + col.W
+            return 0
+
         print "------------------\nAvailable Sessions\n------------------\n"
         for s in sessions:
             print s
@@ -265,14 +270,11 @@ def main():
             context =  open(consts.PICKLE_CONTEXT, 'r')
             _gp = pickle.load(context)
             context.close()
-            print col.P + "[*] Utilizing opened session for encryption:" + col.B + _gp.uuid + col.P + " [*]" + col.W
+            print col.P + "Utilizing opened session for encryption:" + col.B + _gp.uuid + col.W
         else:
-
-            # check for second argument, which is the cleartext for encryption
-
             # create a new temporary object for encryption
             _gp = ghostpass.Ghostpass()
-            print col.P + "[*] No session opened. Please supply master password for independent session-less encryption [*]" + col.W
+            print col.P + "No session opened. Please supply master password for independent session-less encryption" + col.W
             masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
 
             # initializing state with password
@@ -282,9 +284,17 @@ def main():
             del masterpassword
 
         # load corpus file into object
+        logging.debug("Loading corpus")
         _gp.load_corpus(args.command[1])
 
-        # TODO: actual encryption
+        # perform actual encryption
+        logging.debug("Performing encryption")
+        if args.command[2]:
+            # if optional second argument file (represents cleartext )
+            _gp.encrypt_file(args.command[2])
+        else:
+            _gp.encrypt()
+
         return 0
 
     elif command == "decrypt":
@@ -292,26 +302,31 @@ def main():
 
     elif command == "destruct":
 
-        # if only command provided, perform checking to see if only one session exists
-        logging.debug("Checking to see if only one session exists")
-        if len(args.command) == 1:
-            # if multiple sessions exist, print man, and throw exception
-            if len(sessions) > 1:
-                man("destruct")
-                raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for destruction.")
-
         # check if session exists
         logging.debug("Checking to see if specified session exists")
-        if not os.path.isfile(DEFAULT_CONFIG_PATH + args.command[1]):
+        if not os.path.isfile(consts.DEFAULT_CONFIG_PATH + "/" + args.command[1]):
             raise ghostpass.GhostpassException("session does not exist.")
 
+        # check if session is currently open as context
+        logging.debug("Checking to see if specified session is opened")
+        if os.path.isfile(consts.PICKLE_CONTEXT):
+            context =  open(consts.PICKLE_CONTEXT, 'r')
+            cgp = pickle.load(context)
+            context.close()
+            if cgp.uuid == args.command[1]:
+                raise ghostpass.GhostpassException("session is currently open. Please close before destructing")
 
+        # explicitly get user permission, and delete the session
+        yn = raw_input("\n\t> Are you sure you want to delete this session? (y / n) ")
+        if yn == "y" or yn == "yes":
+            os.remove(consts.DEFAULT_CONFIG_PATH + "/" + args.command[1])
+            print "\n" + col.G + "Succesfully deleted session " + args.command[1] + "!" + col.W
+
+        return 0
 
 if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        # ensure that session info is backed up into JSON
-        # ensure proper write to pickle file, if necessary
-        print col.O + "\n[*] Abrupt exit detected. Shutting down safely." + col.W
+        print col.O + "\n[*] Abrupt exit detected. Shutting down." + col.W
         exit(1)
