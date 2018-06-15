@@ -1,5 +1,5 @@
 '''
-    consts.py
+    ghostpass.py
         core interface for interacting with Ghostpass
 '''
 import names
@@ -7,13 +7,14 @@ import random
 import hashlib
 import json
 import jsonpickle
+import threading
 
 import crypto
 import consts
 
 from consts import Color as color
 
-# Define an exception that inherits Exception
+# Define a custom exception
 class GhostpassException(Exception):
     def __init__(self, message):
         print color.R + "[!] Error: " + message + color.W
@@ -24,7 +25,6 @@ class Ghostpass(object):
 
     # represents global pseudorandom identifying ID for session
     uuid = names.get_first_name() + names.get_first_name() + str(random.randrange(0, 100))
-
 
     ############################################################
     # Standard methods
@@ -38,12 +38,13 @@ class Ghostpass(object):
         initializes the state of the instance variables we need
         '''
 
-        # TODO: Timestamp?? Mutex lock??
+        # TODO: Timestamp??
         #       A lot more can be added in order to enable validity during session import
-        self.uuid = self.uuid   # for de/serialization purposes
-        self.password = None    # represents master password (SHA256 encrypted)
-        self.data = []          # used to store key-value entries, AES encrypted with master password
+        self.uuid = self.uuid           # for de/serialization purposes
+        self.password = None            # represents master password (SHA256 encrypted)
+        self.data = []                  # used to store key-value entries, AES encrypted with master password
 
+        self.mutex = threading.Lock()   # create a mutex lock for when working with data
 
     def __repr__(self):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
@@ -113,22 +114,38 @@ class Ghostpass(object):
 
     def add_field(self, field, password):
         '''
-        add field with password to self.data
+        add field with password to self.data if not exist, without any encryption done.
         '''
 
-        # check field existence
+        # check if field exists, and throw back error
         if _check_field_existence(field):
             raise GhostpassException("field {} already exists!".format(field))
 
-        self.data.append({field, password})
+        # critical section, mutex lock
+        self.mutex.acquire()
+        try:
+            self.data.append({field, password})
+        finally:
+            self.mutex.release()
+
         return 0
 
 
     def remove_field(self, field):
+        '''
+        removes field from self.data if exists
+        '''
 
-        # check field existence
+        # check if field doesn't exist, and throw back error
         if not _check_field_existence(field):
-            raise GhostpassException("field {} doesn't exist!".format(field))        
+            raise GhostpassException("field {} doesn't exist!".format(field))
+
+        # critical section, mutex lock
+        self.mutex.acquire()
+        try:
+            self.data.pop(field, 0)
+        finally:
+            self.mutex.release()
 
         return 0
 
@@ -174,5 +191,3 @@ class Ghostpass(object):
         AES-CBC, then export cleartext as .txt file
         '''
         return 0
-
-    # TODO: decrypt and store function

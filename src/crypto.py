@@ -18,8 +18,6 @@ class MarkovHelper:
     def __init__(self, model, inputstate=2):
 
         self.model = open(model, 'r').read() # read the model as a list of chars
-        self.inputstate = inputstate         # where 2 = create bigrams
-
         self.bigrams = []
 
 
@@ -47,14 +45,13 @@ class MarkovHelper:
 
     @staticmethod
     def mlower(word):
-        if w != MARKOV_START:
-            return w.lower()
+        if word != MARKOV_START:
+            return word.lower()
         else:
-            return w
+            return word
 
 
-    @staticmethod
-    def make_lower(word):
+    def make_lower(self, word):
         '''
         lowers all the words within a list or tuple except for the MARKOV_START token
         '''
@@ -67,8 +64,7 @@ class MarkovHelper:
         return self.mlower(word)
 
 
-    @staticmethod
-    def add_bigram(word1, word2):
+    def add_bigram(self, word1, word2):
     	word1b = self.make_lower(word1)
 
     	if word1b in self.bigramsDict:
@@ -78,8 +74,7 @@ class MarkovHelper:
     		self.bigramsDict[word1b] = (word1, [word2])
 
 
-    @staticmethod
-    def compute_probabilities(words):
+    def compute_probabilities(self, words):
     	'''
         given a list of words, compute the probability (in a fraction) for each word
         '''
@@ -96,14 +91,16 @@ class MarkovHelper:
         initialize a new Markov-chained cipher
         '''
 
-        # split sentences, get bigrams
+        # break specified corpus into lines using regex
     	lines = [re.findall(r"\w[\w']*", line) for line
     		in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.model)]
+
+        # append the MARKOV_START symbol for parsing purposes
     	lines = [[MARKOV_START] + line + [MARKOV_START] for line
     		in lines if len(line) >= MIN_LINE_LEN]
 
-        # create bigrams
-    	bigrams1 = [[(line[word], line[word+1], line[word+2]) for word in range(len(line)-2)] for line in lines]
+        # create our bigrams
+    	bigrams1 = [[(line[word], line[word+1], line[word+2]) for word in range(len(line) - 2)] for line in lines]
     	bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
     	bigrams = bigrams1 + bigrams2
 
@@ -114,17 +111,15 @@ class MarkovHelper:
 
     	for line in bigrams:
     		for bigram in line:
-    			if wordsPerState == 1:
-    				self.add_bigram(bigram[0], bigram[1])
-    			elif wordsPerState == 2:
-    				self.add_bigram((bigram[0], bigram[1]), bigram[2])
+    			self.add_bigram((bigram[0], bigram[1]), bigram[2])
 
         # at this point, fullBigrams contains the markovChain with probabilities in fractions
-    	fullBigrams = bigramsDict.values()
+    	fullBigrams = self.bigramsDict.values()
     	self.bigrams = [(bigram[0], self.compute_probabilities(bigram[1])) for bigram in fullBigrams]
 
 
-class AES:
+
+class AESHelper:
 
     def __init__(self, key):
         self.keysize = 32 # represents 32 byte-sized key

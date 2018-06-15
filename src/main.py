@@ -36,8 +36,8 @@ def man(argument):
             print v
         # otherwise, print available args
         if argument is None or argument == "all":
-            print k
-    print "-----------\nEnter ghostpass help <command> for more information about a specific command\n"
+            sys.stdout.write("" + k + " ")
+    print "\n\nEnter ghostpass help <command> for more information about a specific command\n"
 
 
 def check_arg(argument):
@@ -85,23 +85,26 @@ def main():
     if check_arg(command) != 0:
         raise ghostpass.GhostpassException("invalid command")
 
-    # Preemptive argument checking to see if necessary field is provided
-    # REQUIRED - add, remove, view, destruct, encrypt, decrypt
+    # Preemptive argument checking to see if necessary (one) field is provided
+    # REQUIRED - add, remove, view, destruct
     # OPTIONAL - open
     # NO ARGS - init, list, secrets
-    logging.debug("Checking if specific commands satisfy with second argument arguments")
-    if command in ["add", "remove", "view", "destruct", "encrypt", "decrypt"] and len(args.command) != 2:
+    logging.debug("Checking if specific commands satisfy with args specification")
+    if command in ["add", "remove", "view", "destruct"] and len(args.command) != 2:
         man(command)
         raise ghostpass.GhostpassException("{} command requires at least one field argument".format(command))
 
-
     # Now check for arguments with multiple fields
     # MULTIPLE - encrypt, decrypt
-    logging.debug("Checking if extra arguments were provided (max 2)")
-    if not command in ["encrypt", "decrypt"] and len(args.command) > 2:
-        raise ghostpass.GhostpassException("extraneous argument(s) provided")
-    elif command in ["encrypt", "decrypt"] and len(args.command) > 3:
-        raise ghostpass.GhostpassException("extraneous argument(s) provided")
+    #   - note that for 'encrypt', one OR two arguments CAN be specified, and NO arguments will fail
+    elif command == "encrypt" and not (len(args.command) >= 2 and len(args.command) <= 3):
+        man(command)
+        raise ghostpass.GhostpassException("{} command requires at least one field argument".format(command))
+
+    #   - note that for 'decrypt', BOTH arguments are REQUIRED
+    elif command == "decrypt" and not len(args.command) == 3:
+        man(command)
+        raise ghostpass.GhostpassException("{} command requires at two field arguments".format(command))
 
     # grab a list of all sessions within config path
     # TODO: robustness by checking validity of session file, to ensure no invalid/malicious JSON files are present
@@ -270,7 +273,7 @@ def main():
             context =  open(consts.PICKLE_CONTEXT, 'r')
             _gp = pickle.load(context)
             context.close()
-            print col.P + "Utilizing opened session for encryption:" + col.B + _gp.uuid + col.W
+            print col.P + "Utilizing opened session for encryption: " + col.B + _gp.uuid + col.W
         else:
             # create a new temporary object for encryption
             _gp = ghostpass.Ghostpass()
@@ -289,8 +292,8 @@ def main():
 
         # perform actual encryption
         logging.debug("Performing encryption")
-        if args.command[2]:
-            # if optional second argument file (represents cleartext )
+        if len(args.command) == 3:
+            # if optional second argument file (represents cleartext)
             _gp.encrypt_file(args.command[2])
         else:
             _gp.encrypt()
