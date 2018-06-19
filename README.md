@@ -6,6 +6,11 @@ Don't use this yet! I'm not done. I'm just flexing my contributions.
 
 ## 1. Introduction
 
+
+> The lack of use of third-party libraries and modules allow us to demonstrate the efficiencies of such a password manager using just
+> native Python functionality. Of course, utilizing such other libraries / modules are still feasible, but performance and security must
+> be evaluated accordingly.
+
 ### 1.1 Problems
 
 1. Web-based password managers are centralized, and data breech for undiscovered vulnerability results in catastrophic events.

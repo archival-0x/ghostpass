@@ -115,7 +115,7 @@ def main():
 
     # preemptive context file checking and opening - complete this for specific commands that require context file
     logging.debug("Checking if context file exists")
-    if command in ["add", "remove", "stash"]:
+    if command in ["add", "remove", "view", "stash", "secrets"]:
         # check if context file exists before adding
         if not os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("no session has been opened")
@@ -217,13 +217,19 @@ def main():
         return 0
 
     elif command == "add":
+
         print col.P + "Adding field: " + args.command[1] + col.W + "\n"
 
         # retrieve secret for specific field
+        username = raw_input("> Enter USERNAME for the field: ")
         secret = getpass("> Enter SECRET for field (will NOT be echoed): ")
 
         # securely append field and secret to session context
-        _gp.add_field(args.command[1], secret)
+        if _gp.add_field(args.command[1], username, secret) == 0:
+            with open(consts.PICKLE_CONTEXT, 'wb') as context:
+                pickle.dump(_gp, context)
+        else:
+            raise ghostpass.GhostpassException("unable to add field: {}".format(args.command[1]))
 
         # ensure cleartext secret is NOT cached
         del secret
@@ -231,12 +237,16 @@ def main():
         return 0
 
     elif command == "remove":
+
         print col.P + "Removing field: " + args.command[1] + col.W
 
         # securely remove field and secret from session context
-        _gp.remove_field(args.command[1], secret)
-        print col.G + "Success! Removed {}".format(args.command[1]) + col.W
-
+        if _gp.remove_field(args.command[1]) == 0:
+            print col.G + "Success! Removed {}".format(args.command[1]) + col.W
+            with open(consts.PICKLE_CONTEXT, 'wb') as context:
+                pickle.dump(_gp, context)
+        else:
+            raise ghostpass.GhostpassException("unable to remove field: {}".format(args.command[1]))
         return 0
 
     elif command == "view":
@@ -244,6 +254,14 @@ def main():
         return 0
 
     elif command == "stash":
+        return 0
+
+
+    elif command == "secrets":
+
+        # list out all secrets for particular session
+        logging.debug("Listing all secrets for this session")
+        print _gp.view_all()
         return 0
 
     elif command == "list":
@@ -259,9 +277,6 @@ def main():
         for s in sessions:
             print s
         print "\n-----------\n"
-        return 0
-
-    elif command == "secrets":
         return 0
 
     elif command == "encrypt":

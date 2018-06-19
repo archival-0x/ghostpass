@@ -20,6 +20,7 @@ class GhostpassException(Exception):
         print color.R + "[!] Error: " + message + color.W
         exit(1)
 
+global_mutex = threading.Lock()   # create a mutex lock for when working with data
 
 class Ghostpass(object):
 
@@ -38,13 +39,11 @@ class Ghostpass(object):
         initializes the state of the instance variables we need
         '''
 
-        # TODO: Timestamp??
-        #       A lot more can be added in order to enable validity during session import
+        # TODO: Timestamp? Flag for open / closed ?
         self.uuid = self.uuid           # for de/serialization purposes
         self.password = None            # represents master password (SHA256 encrypted)
         self.data = []                  # used to store key-value entries, AES encrypted with master password
 
-        self.mutex = threading.Lock()   # create a mutex lock for when working with data
 
     def __repr__(self):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
@@ -102,31 +101,46 @@ class Ghostpass(object):
     ############################################################
 
     def _check_field_existence(self, field):
-        if not any(f.key() == field for f in self.data):
-            return False
-        else:
-            return True
+        '''
+        using any(), check to see if the specified field already exists in
+        our set of data
+        '''
+
+        # TODO: was lazy, MAKE MORE FUNCTIONAL AND EFFICIENT!
+        for f in self.data:
+            for k, v in f.iteritems():
+                if k == field:
+                    return True
+
+        return False
 
 
     def view_field(self, field, password):
         return 0
 
 
-    def add_field(self, field, password):
+    def view_all(self):
+        # TODO: make it look nice!
+        return self.data
+
+
+    def add_field(self, field, username, password):
         '''
         add field with password to self.data if not exist, without any encryption done.
         '''
 
         # check if field exists, and throw back error
-        if _check_field_existence(field):
+        if self._check_field_existence(field):
             raise GhostpassException("field {} already exists!".format(field))
 
         # critical section, mutex lock
-        self.mutex.acquire()
+        global_mutex.acquire()
         try:
-            self.data.append({field, password})
+            self.data.append({field: (username, password) })
+        except Exception:
+            return 1
         finally:
-            self.mutex.release()
+            global_mutex.release()
 
         return 0
 
@@ -137,21 +151,32 @@ class Ghostpass(object):
         '''
 
         # check if field doesn't exist, and throw back error
-        if not _check_field_existence(field):
+        if not self._check_field_existence(field):
             raise GhostpassException("field {} doesn't exist!".format(field))
 
         # critical section, mutex lock
-        self.mutex.acquire()
+        global_mutex.acquire()
         try:
-            self.data.pop(field, 0)
+            self.data = [f for f in self.data if str(field) not in f]
+        except Exception:
+            return 1
         finally:
-            self.mutex.release()
+            global_mutex.release()
 
         return 0
 
 
-    def overwrite_field(self, field, password):
-        return 0
+    def overwrite_field(self, field, username, password):
+
+        # check if field doesn't exist, and throw back error
+        if not self._check_field_existence(field):
+            raise GhostpassException("field {} doesn't exist!".format(field))
+
+        global_mutex.acquire()
+        try:
+            self.data[field] = (username, password)
+        finally:
+            global_mutex.release()
 
 
     def stash_changes(self):
