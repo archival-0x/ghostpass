@@ -94,6 +94,29 @@ ghostpass destruct <session>
 
 ```
 
+## 4. Contribution
+
+To create a new branch for contributions:
+
+```
+$ git remote add upstream https://github.com/ex0dus-0x/ghostpass
+$ git checkout -b my-branch-name
+$ # do code, do tests, etc etc
+$ git add .
+$ git commit -m "Useful commit message"
+$ git push origin my-branch-name
+```
+
+Of course, remember to `git fetch` for changes.
+
+To setup a development environment:
+
+```
+$ pip install virutalenv
+$ virtualenv env/
+$ source env/bin/activate
+$ pip install -r requirements.txt
+```
 
 ## TODO
 
