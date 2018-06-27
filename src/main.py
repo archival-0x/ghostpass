@@ -86,11 +86,11 @@ def main():
         raise ghostpass.GhostpassException("invalid command")
 
     # Preemptive argument checking to see if necessary (one) field is provided
-    # REQUIRED - add, remove, view, destruct
+    # REQUIRED - add, remove, view, override, destruct
     # OPTIONAL - open
-    # NO ARGS - init, list, secrets
+    # NO ARGS - init, list, secrets, close, help
     logging.debug("Checking if specific commands satisfy with args specification")
-    if command in ["add", "remove", "view", "destruct"] and len(args.command) != 2:
+    if command in ["add", "remove", "view", "destruct", "override"] and len(args.command) != 2:
         man(command)
         raise ghostpass.GhostpassException("{} command requires at least one field argument".format(command))
 
@@ -115,7 +115,7 @@ def main():
 
     # preemptive context file checking and opening - complete this for specific commands that require context file
     logging.debug("Checking if context file exists")
-    if command in ["add", "remove", "view", "stash", "secrets"]:
+    if command in ["add", "remove", "override", "view", "stash", "secrets"]:
         # check if context file exists before adding
         if not os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("no session has been opened")
@@ -222,7 +222,7 @@ def main():
 
         # retrieve secret for specific field
         username = raw_input("> Enter USERNAME for the field: ")
-        secret = getpass("> Enter SECRET for field (will NOT be echoed): ")
+        secret = getpass("> Enter PASSWORD for field (will NOT be echoed): ")
 
         # securely append field and secret to session context
         if _gp.add_field(args.command[1], username, secret) == 0:
@@ -316,7 +316,26 @@ def main():
         return 0
 
     elif command == "decrypt":
-        print args.command[1], args.command[2]
+
+        # perform file-checking
+        logging.debug("Checking if specified files exist")
+        if not os.path.isfile(args.command[1]) and os.path.isfile(args.command[2]):
+            raise ghostpass.GhostpassException("file(s) specified do not exist")
+
+        # since decrypt does not manipulate sessions, no context-checking is necessary
+        logging.debug("Performing decryption")
+
+        # create object for decrypt functionality
+        _gp = ghostpass.Ghostpass()
+        masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+        _gp.init_state(masterpassword)
+        del masterpassword
+
+        # decrypt the file, and export and output the resultant
+        with open(decrypt(args.command[1], args.command[2]), 'w') as export:
+            print export
+
+        return 0
 
     elif command == "destruct":
 
@@ -341,6 +360,7 @@ def main():
             print "\n" + col.G + "Succesfully deleted session " + args.command[1] + "!" + col.W
 
         return 0
+
 
 if __name__ == '__main__':
     try:

@@ -18,7 +18,18 @@ Don't use this yet! I'm not done. I'm just flexing my contributions.
 
 ### 1.2 Features
 
+
+### 1.3 Important Definitions
+
+__secret__ - a key-value representation of a username and its password
+
+__field__ - the name the identifies a specific secret
+
+__corpus__ - a file that is parsed for Markov chain generation
+
 ## 2. How does it all work?
+
+The idea of __ghostpass__ is presented as not a singular password manager, but rather a protocol that can implemented flexibly.
 
 ### Encryption Process
 

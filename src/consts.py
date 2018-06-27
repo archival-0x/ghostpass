@@ -51,6 +51,10 @@ ghostpass add <field>
 ghostpass remove <field>
     - Removes secret associated with <field> from current session
 """,
+    'override': """
+ghostpass remove <field>
+    - Overrides secret associated with <field> from current session
+""",
     'view': """
 ghostpass view <field>
     - Shows unencrypted secret associated with <field> in current session

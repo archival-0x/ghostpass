@@ -102,7 +102,7 @@ class Ghostpass(object):
 
     def _check_field_existence(self, field):
         '''
-        using any(), check to see if the specified field already exists in
+        check to see if the specified field already exists in
         our set of data
         '''
 
@@ -116,6 +116,10 @@ class Ghostpass(object):
 
 
     def view_field(self, field, password):
+        '''
+        return unencrypted secret key-value
+        '''
+
         return 0
 
 
@@ -167,11 +171,15 @@ class Ghostpass(object):
 
 
     def overwrite_field(self, field, username, password):
+        '''
+        change specified field with new secret
+        '''
 
         # check if field doesn't exist, and throw back error
         if not self._check_field_existence(field):
             raise GhostpassException("field {} doesn't exist!".format(field))
 
+        # critical section, mutex lock
         global_mutex.acquire()
         try:
             self.data[field] = (username, password)
@@ -209,7 +217,7 @@ class Ghostpass(object):
         '''
         return 0
 
-
+    @staticmethod
     def decrypt(ciphertext, corpus):
         '''
         works independently - decrypt with specified corpus fle, then decrypt with
