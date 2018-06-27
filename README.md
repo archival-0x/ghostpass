@@ -13,7 +13,7 @@ Don't use this yet! I'm not done. I'm just flexing my contributions.
 
 ### 1.1 Problems
 
-1. Web-based password managers are centralized and data breeches due to zero day vulnerabilities results in catastrophic events.
+1. Web-based password managers are centralized and data breaches due to zero day vulnerabilities results in catastrophic events.
 2. Modern offline clients (e.g KeePass) fail to allow for fast distribution across hosts and portability of decryption anymore.
 
 ### 1.2 Features
