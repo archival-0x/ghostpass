@@ -20,11 +20,21 @@ class MarkovHelper:
         self.model = open(model, 'r').read() # read the model as a list of chars
         self.bigrams = []
 
+    @staticmethod
+    def toTuple(t):
+        '''
+        helper - given a variable, determine type and return as tuple
+        '''
+
+        if type(t) == list:
+            return tuple(t)
+        else:
+            return t
 
     @staticmethod
     def repeats(words):
         '''
-        given a list of words, count how many times each one is listed
+        helper - given a list of words, count how many times each one is listed
         '''
 
         # create a dict to store counts of word in corpus
@@ -118,8 +128,40 @@ class MarkovHelper:
     	self.bigrams = [(bigram[0], self.compute_probabilities(bigram[1])) for bigram in fullBigrams]
 
 
+    def generate_text(self):
+
+        self.words = []
+        prev = MARKOV_START
+
+        markovDict = {}
+        for bigram in self.bigrams:
+            markovDict[self.make_lower(self.toTuple(bigram[0]))] = bigram[1]
+
+        while True:
+            m = markovDict(self.make_lower(prev))
+            denominator = m[0][1][1]
+            rnd = random.randint(1, denominator)
+            total = 0
+            nextWord = None
+
+            for word in m:
+                total = total + word[1][0]
+                if total >= rnd:
+                    nextWord = word[0]
+                    break
+
+            if nextWord == MARKOV_START:
+                break
+
+            self.words.append(nextWord)
+
+            prev = (prev[1], nextWord)
+
+
 
 class AESHelper:
+
+    # TODO: documentation for this whole class
 
     def __init__(self, key):
         self.keysize = 32 # represents 32 byte-sized key
