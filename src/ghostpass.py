@@ -20,7 +20,10 @@ class GhostpassException(Exception):
         print color.R + "[!] Error: " + message + color.W
         exit(1)
 
-global_mutex = threading.Lock()   # create a mutex lock for when working with data
+
+# create a global mutex lock for critical sections
+global_mutex = threading.Lock()
+
 
 class Ghostpass(object):
 

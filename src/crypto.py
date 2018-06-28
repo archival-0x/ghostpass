@@ -5,6 +5,7 @@
 
 import re
 import hashlib
+import random
 import base64
 
 from Crypto import Random
@@ -18,7 +19,12 @@ class MarkovHelper:
     def __init__(self, model, inputstate=2):
 
         self.model = open(model, 'r').read() # read the model as a list of chars
-        self.bigrams = []
+        self.bigrams = []                    # stores bigram tuples for Markov Chain
+
+    ####################################
+    # Text manipulation helper functions
+    ####################################
+
 
     @staticmethod
     def toTuple(t):
@@ -30,6 +36,7 @@ class MarkovHelper:
             return tuple(t)
         else:
             return t
+
 
     @staticmethod
     def repeats(words):
@@ -54,7 +61,10 @@ class MarkovHelper:
 
 
     @staticmethod
-    def mlower(word):
+    def word_lower(word):
+        '''
+        lowers a word if not the MARKOV_START symbol
+        '''
         if word != MARKOV_START:
             return word.lower()
         else:
@@ -67,14 +77,18 @@ class MarkovHelper:
         '''
 
     	if type(word) is list:
-    		return [self.mlower(w) for w in word]
+    		return [self.word_lower(w) for w in word]
     	elif type(word) is tuple:
-    		return tuple([self.mlower(w) for w in word])
+    		return tuple([self.word_lower(w) for w in word])
 
-        return self.mlower(word)
+        return self.word_lower(word)
 
 
     def add_bigram(self, word1, word2):
+        '''
+
+        '''
+
     	word1b = self.make_lower(word1)
 
     	if word1b in self.bigramsDict:
@@ -82,6 +96,33 @@ class MarkovHelper:
     		w2.append(word2)
     	else:
     		self.bigramsDict[word1b] = (word1, [word2])
+
+
+    @staticmethod
+    def list_to_text(str1):
+        '''
+        convert a list of words into text
+        '''
+
+    	text = ""
+    	lastWord = config.startSymbol
+
+    	for word in strl:
+    		if lastWord == config.startSymbol and word != config.startSymbol:
+    			word = word[0].capitalize() + word[1:]
+
+    		if word != config.startSymbol and text != "":
+    			text = text + " "
+
+    		if not(text == "" and word == config.startSymbol):
+    			if word == config.startSymbol:
+    				text = text + "."
+    			else:
+    				text = text + word
+
+    		lastWord = word
+
+        return text.rstrip("")
 
 
     def compute_probabilities(self, words):
@@ -94,6 +135,11 @@ class MarkovHelper:
 
     	total = sum([c[1] for c in count])
         return [(c[0], (c[1], total)) for c in count]
+
+
+    ####################################
+    # Actual interface functions
+    ####################################
 
 
     def init_mc(self):
@@ -129,8 +175,12 @@ class MarkovHelper:
 
 
     def generate_text(self):
+        '''
+        generate actual text from markov chain cipher, and returns text as a list
+        '''
 
-        self.words = []
+        # create a list to store generated text
+        words = []
         prev = MARKOV_START
 
         markovDict = {}
@@ -150,13 +200,25 @@ class MarkovHelper:
                     nextWord = word[0]
                     break
 
+            # check if MARKOV_START is the next word
             if nextWord == MARKOV_START:
                 break
 
-            self.words.append(nextWord)
+            # add words into list
+            words.append(nextWord)
 
             prev = (prev[1], nextWord)
 
+        # return words, converted as text
+        return self.list_to_text(words)
+
+
+    def decrypt_text(self, ciphertext):
+        '''
+        decrypts the ciphertext, using Markov chain cipher
+        '''
+
+        return 0
 
 
 class AESHelper:
@@ -169,6 +231,9 @@ class AESHelper:
 
 
     def aes_encrypt(self, raw):
+        '''
+        encrypt raw text into an encrypted AES ciphertext
+        '''
         raw = self._pad(raw)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
@@ -176,6 +241,9 @@ class AESHelper:
 
 
     def aes_decrypt(self, enc):
+        '''
+        decrypt encoded text into an raw text
+        '''
         enc = base64.b64decode(enc)
         iv = enc[:AES.block_size]
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
