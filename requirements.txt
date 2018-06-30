@@ -1,2 +1,5 @@
+bitstring==3.1.5
 jsonpickle==0.9.6
 names==0.3.0
+pycrypto==2.6.1
+tabulate==0.8.2

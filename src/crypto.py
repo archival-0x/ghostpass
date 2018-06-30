@@ -21,6 +21,7 @@ class MarkovHelper:
         self.model = open(model, 'r').read() # read the model as a list of chars
         self.bigrams = []                    # stores bigram tuples for Markov Chain
 
+
     ####################################
     # Text manipulation helper functions
     ####################################
@@ -222,8 +223,6 @@ class MarkovHelper:
 
 
 class AESHelper:
-
-    # TODO: documentation for this whole class
 
     def __init__(self, key):
         self.keysize = 32 # represents 32 byte-sized key

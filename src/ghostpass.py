@@ -8,6 +8,7 @@ import hashlib
 import json
 import jsonpickle
 import threading
+import tabulate
 
 import crypto
 import consts
@@ -63,6 +64,9 @@ class Ghostpass(object):
             raise GhostpassException("master password is not optional")
         self.password = hashlib.sha256(password).hexdigest()
 
+        # initialize a new AESHelper
+        self.aeshelp = crypto.AESHelper(self.password)
+
         # since cleartext password is copied to object, make sure to delete
         del password
 
@@ -109,7 +113,7 @@ class Ghostpass(object):
         our set of data
         '''
 
-        # TODO: was lazy, MAKE MORE FUNCTIONAL AND EFFICIENT!
+        # for each field, check if the key is same as the field specified
         for f in self.data:
             for k, v in f.iteritems():
                 if k == field:
@@ -118,17 +122,40 @@ class Ghostpass(object):
         return False
 
 
-    def view_field(self, field, password):
+    def view_field(self, field):
         '''
-        return unencrypted secret key-value
+        return unencrypted secret
         '''
 
-        return 0
+        # check if field doesn't exist, and throw back error
+        if not self._check_field_existence(field):
+            raise GhostpassException("field {} doesn't exist!".format(field))
+
+        # search through self.data for specific field that matches key
+        entry = []
+        for f in self.data:
+            for key, value in f.iteritems():
+                if key == field:
+                    temp = [key, value[0], value[1]]
+                    entry.append(temp)
+
+        return tabulate.tabulate(entry, headers=["Field", "Username", "Password"])
 
 
     def view_all(self):
-        # TODO: make it look nice!
-        return self.data
+        '''
+        returns a pretty-printed grid formatted table
+        of all unencrypted secrets
+        '''
+
+        table = []
+
+        for field in self.data:
+            for key, value in field.iteritems():
+                temp = [key, value[0], value[1]]
+                table.append(temp)
+
+        return tabulate.tabulate(table, headers=["Field", "Username", "Password"])
 
 
     def add_field(self, field, username, password):
@@ -205,11 +232,22 @@ class Ghostpass(object):
     ############################################################
 
 
-    def encrypt(self):
+    def encrypt(self, field):
         '''
-        encrypt fields in self.data with AES-CBC, then our Markov-chain cipher,
+        encrypt field with AES-CBC, then our Markov-chain cipher,
         then export it as a .txt file
         '''
+
+        # check if field doesn't exist, and throw back error
+        if not self._check_field_existence(field):
+            raise GhostpassException("field {} doesn't exist!".format(field))
+
+        # search for field and encrypt password
+        for f in self.data:
+            for key, value in f.iteritems():
+                if key == field:
+                    f[key] = (value[0], self.aeshelp.encrypt(value))
+
         return 0
 
 
@@ -219,6 +257,7 @@ class Ghostpass(object):
         then export it as a .txt file
         '''
         return 0
+
 
     @staticmethod
     def decrypt(ciphertext, corpus):

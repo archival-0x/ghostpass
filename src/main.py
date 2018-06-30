@@ -201,6 +201,8 @@ def main():
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
             pickle.dump(_gp, context)
 
+        # TODO: peform decryption
+
         print col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W
         return 0
 
@@ -250,18 +252,22 @@ def main():
         return 0
 
     elif command == "view":
-        print _gp.view_field(args.command[1])
+
+        # calls view_field()
+        logging.debug("Outputting unencrypted field")
+        print "\n", _gp.view_field(args.command[1]), "\n"
         return 0
 
     elif command == "stash":
-        return 0
 
+        # TODO: reencrypt all field passwords
+        return 0
 
     elif command == "secrets":
 
         # list out all secrets for particular session
         logging.debug("Listing all secrets for this session")
-        print _gp.view_all()
+        print "\n", _gp.view_all(), "\n"
         return 0
 
     elif command == "list":
