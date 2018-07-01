@@ -246,7 +246,7 @@ class Ghostpass(object):
         for f in self.data:
             for key, value in f.iteritems():
                 if key == field:
-                    f[key] = (value[0], self.aeshelp.encrypt(value))
+                    f[key] = (value[0], self.aeshelp.encrypt(value[1]))
 
         return 0
 
@@ -259,8 +259,21 @@ class Ghostpass(object):
         return 0
 
 
+    def decrypt_all(self, password):
+        '''
+        decrypt each field's password using AES-CBC
+        '''
+
+        # search for field and decrypt password
+        for f in self.data:
+            for key, value in f.iteritems():
+                if key == field:
+                    f[key] = (value[0], self.aeshelp.decrypt(value[1]))
+
+
+
     @staticmethod
-    def decrypt(ciphertext, corpus):
+    def decrypt_file(ciphertext, corpus):
         '''
         works independently - decrypt with specified corpus fle, then decrypt with
         AES-CBC, then export cleartext as .txt file

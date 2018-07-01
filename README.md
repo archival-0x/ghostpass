@@ -70,6 +70,7 @@ ghostpass open <session>
 
 ghostpass close
     - Closes ghostpass session, if any is opened
+    - Changes should be STASHED to original session to save
 
 ghostpass add <field>
     - Adds a new secret associated with <field> to current session
@@ -82,6 +83,7 @@ ghostpass view <field>
 
 ghostpass stash
     - Commits changes made in opened session
+    - Does not close session, but only writes changes to it
 
 ghostpass list
     - Shows all sessions created by user

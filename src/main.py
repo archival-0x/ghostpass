@@ -199,9 +199,8 @@ def main():
         # dump into pickle file
         logging.debug("Creating and writing context.pickle file")
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
+            _gp.decrypt_all()
             pickle.dump(_gp, context)
-
-        # TODO: peform decryption
 
         print col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W
         return 0
@@ -260,7 +259,16 @@ def main():
 
     elif command == "stash":
 
-        # TODO: reencrypt all field passwords
+        # calling stash_changes() to re-encrypt all passwords
+        logging.debug("Re-encrypting all passwords and writing to session")
+        _gp.stash_changes()
+
+        # writing encrypted structure to original session
+        with open(consts.DEFAULT_CONFIG_PATH + "/" + _gp.uuid, 'w') as context:
+            json_obj = json_pickle.encode(_gp)
+            context.write(json_obj)
+
+        # user calls 'close' to remove context.pickle
         return 0
 
     elif command == "secrets":

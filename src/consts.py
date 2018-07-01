@@ -42,6 +42,7 @@ ghostpass open <session>
     'close': """
 ghostpass close
     - Closes ghostpass session, if any is opened
+    - Changes should be STASHED to original session to save
 """,
     'add': """
 ghostpass add <field>
@@ -62,6 +63,7 @@ ghostpass view <field>
     'stash': """
 ghostpass stash
     - Commits changes made in opened session
+    - Does not close session, but only writes changes to it
 """,
     'list': """
 ghostpass list
