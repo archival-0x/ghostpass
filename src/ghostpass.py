@@ -62,7 +62,7 @@ class Ghostpass(object):
         # perform error-checking and hash using SHA256
         if password == "":
             raise GhostpassException("master password is not optional")
-        self.password = hashlib.sha256(password).hexdigest()
+        self.password = hashlib.sha256(password.encode('utf-8')).hexdigest()
 
         # initialize a new AESHelper
         self.aeshelp = crypto.AESHelper(self.password)
@@ -79,7 +79,7 @@ class Ghostpass(object):
         '''
 
         # ensure that path is not empty: corpus is not optional
-        if corpus_path == "":
+        if corpus_path == "" or corpus_path == None:
             raise GhostpassException("corpus path is not optional")
 
         # convert path into Markov-chain cipher and generate markov chain cipher
@@ -124,7 +124,7 @@ class Ghostpass(object):
 
     def view_field(self, field):
         '''
-        return unencrypted secret
+        returns the unencrypted version of secret of a specific field.
         '''
 
         # check if field doesn't exist, and throw back error
@@ -132,6 +132,7 @@ class Ghostpass(object):
             raise GhostpassException("field {} doesn't exist!".format(field))
 
         # search through self.data for specific field that matches key
+        # then it is appended to a list and then formatted for pretty-print
         entry = []
         for f in self.data:
             for key, value in f.iteritems():
@@ -139,6 +140,7 @@ class Ghostpass(object):
                     temp = [key, value[0], value[1]]
                     entry.append(temp)
 
+        # return a tabulated version
         return tabulate.tabulate(entry, headers=["Field", "Username", "Password"])
 
 
@@ -150,11 +152,13 @@ class Ghostpass(object):
 
         table = []
 
+        # append values within fields into list for pretty-print
         for field in self.data:
             for key, value in field.iteritems():
                 temp = [key, value[0], value[1]]
                 table.append(temp)
 
+        # return a tabulated version
         return tabulate.tabulate(table, headers=["Field", "Username", "Password"])
 
 
@@ -216,14 +220,20 @@ class Ghostpass(object):
         finally:
             global_mutex.release()
 
+        return 0
+
 
     def stash_changes(self):
         '''
-        encrypt fields with AES-CBC, and move changes from context into original
-        JSON
+        encrypt fields with AES-CBC, enabling the user to then move
+        changes and commit into session file
         '''
-        return 0
 
+        for field in self.data:
+            for key, value in field.iteritems():
+                self.encrypt(key)
+
+        return 0
 
     ############################################################
     # Crypto handlers
@@ -249,7 +259,6 @@ class Ghostpass(object):
                     f[key] = (value[0], self.aeshelp.encrypt(value[1]))
 
         return 0
-
 
     def encrypt_file(self, file):
         '''

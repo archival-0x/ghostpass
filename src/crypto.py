@@ -225,7 +225,7 @@ class MarkovHelper:
 class AESHelper:
 
     def __init__(self, key):
-        self.keysize = 32 # represents 32 byte-sized key
+        self.blocksize = 32 # represents 16 byte-sized key
         self.key = key    # key has already been converted into SHA256 hash in ghostpass object
 
 
@@ -250,7 +250,7 @@ class AESHelper:
 
 
     def _pad(self, s):
-        return s + (self.keysize - len(s) % self.keysize) * chr(self.keysize - len(s) % self.keysize)
+        return s + (self.blocksize - len(s) % self.blocksize) * chr(self.blocksize - len(s) % self.blocksize)
 
 
     @staticmethod

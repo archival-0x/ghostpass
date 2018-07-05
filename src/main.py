@@ -158,6 +158,8 @@ def main():
         # export ghostpass object to encrypted JSON file
         logging.debug("Exporting ghostpass to JSON")
         gp.export()
+
+        print col.G + "\nCreated new session! Remember your password, and use `ghostpass open <SESSION>` to open it!" + col.W
         return 0
 
     elif command == "open":
@@ -176,6 +178,8 @@ def main():
             if len(sessions) > 1:
                 man("open")
                 raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for opening.")
+            elif len(sessions) == 0:
+                raise ghostpass.GhostpassException("no sessions exist. Use `ghostpass init` to create a new one.")
 
             # set context_session as first entry in configuration path
             context_session = consts.DEFAULT_CONFIG_PATH + "/" + sessions[0]
@@ -373,7 +377,7 @@ def main():
                     raise ghostpass.GhostpassException("session is currently open. Please close before destructing")
 
         # explicitly get user permission, and delete the session
-        yn = raw_input("\n\t> Are you sure you want to delete this session? (y / n) ")
+        yn = raw_input("\n> Are you sure you want to delete this session? (y / n) ")
         if yn == "y" or yn == "yes":
             os.remove(consts.DEFAULT_CONFIG_PATH + "/" + args.command[1])
             print "\n" + col.G + "Succesfully deleted session " + args.command[1] + "!" + col.W
