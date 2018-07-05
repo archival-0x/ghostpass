@@ -198,7 +198,7 @@ def main():
         logging.debug("Performing password authentication")
         print col.P + "Opening session: " + _gp.uuid + col.W
         contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        if hashlib.sha256(contextpassword).hexdigest() != _gp.password:
+        if hashlib.sha256(contextpassword).digest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
 
         # dump into pickle file

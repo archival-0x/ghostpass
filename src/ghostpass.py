@@ -60,9 +60,9 @@ class Ghostpass(object):
         '''
 
         # perform error-checking and hash using SHA256
-        if password == "":
+        if password == "" or password == None:
             raise GhostpassException("master password is not optional")
-        self.password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        self.password = hashlib.sha256(password.encode('utf-8')).digest()
 
         # initialize a new AESHelper
         self.aeshelp = crypto.AESHelper(self.password)
