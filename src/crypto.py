@@ -40,7 +40,7 @@ class MarkovHelper:
 
 
     @staticmethod
-    def repeats(words):
+    def _repeats(words):
         '''
         helper - given a list of words, count how many times each one is listed
         '''
@@ -62,7 +62,7 @@ class MarkovHelper:
 
 
     @staticmethod
-    def word_lower(word):
+    def _word_lower(word):
         '''
         lowers a word if not the MARKOV_START symbol
         '''
@@ -72,25 +72,25 @@ class MarkovHelper:
             return word
 
 
-    def make_lower(self, word):
+    def _make_lower(self, word):
         '''
         lowers all the words within a list or tuple except for the MARKOV_START token
         '''
 
     	if type(word) is list:
-    		return [self.word_lower(w) for w in word]
+    		return [self._word_lower(w) for w in word]
     	elif type(word) is tuple:
-    		return tuple([self.word_lower(w) for w in word])
+    		return tuple([self._word_lower(w) for w in word])
 
-        return self.word_lower(word)
+        return self._word_lower(word)
 
 
-    def add_bigram(self, word1, word2):
+    def _add_bigram(self, word1, word2):
+        '''
+        creates a bigram and appends to self.bigramsDict
         '''
 
-        '''
-
-    	word1b = self.make_lower(word1)
+    	word1b = self._make_lower(word1)
 
     	if word1b in self.bigramsDict:
     		(w1, w2) = self.bigramsDict[word1b]
@@ -100,7 +100,7 @@ class MarkovHelper:
 
 
     @staticmethod
-    def list_to_text(str1):
+    def _list_to_text(str1):
         '''
         convert a list of words into text
         '''
@@ -126,13 +126,13 @@ class MarkovHelper:
         return text.rstrip("")
 
 
-    def compute_probabilities(self, words):
+    def _compute_probabilities(self, words):
     	'''
         given a list of words, compute the probability (in a fraction) for each word
         '''
 
         # check for repeats in a set of words
-    	count = self.repeats(words)
+    	count = self._repeats(words)
 
     	total = sum([c[1] for c in count])
         return [(c[0], (c[1], total)) for c in count]
@@ -168,11 +168,11 @@ class MarkovHelper:
 
     	for line in bigrams:
     		for bigram in line:
-    			self.add_bigram((bigram[0], bigram[1]), bigram[2])
+    			self._add_bigram((bigram[0], bigram[1]), bigram[2])
 
         # at this point, fullBigrams contains the markovChain with probabilities in fractions
     	fullBigrams = self.bigramsDict.values()
-    	self.bigrams = [(bigram[0], self.compute_probabilities(bigram[1])) for bigram in fullBigrams]
+    	self.bigrams = [(bigram[0], self._compute_probabilities(bigram[1])) for bigram in fullBigrams]
 
 
     def generate_text(self):
@@ -186,10 +186,10 @@ class MarkovHelper:
 
         markovDict = {}
         for bigram in self.bigrams:
-            markovDict[self.make_lower(self.toTuple(bigram[0]))] = bigram[1]
+            markovDict[self._make_lower(self.toTuple(bigram[0]))] = bigram[1]
 
         while True:
-            m = markovDict(self.make_lower(prev))
+            m = markovDict(self._make_lower(prev))
             denominator = m[0][1][1]
             rnd = random.randint(1, denominator)
             total = 0
@@ -211,7 +211,7 @@ class MarkovHelper:
             prev = (prev[1], nextWord)
 
         # return words, converted as text
-        return self.list_to_text(words)
+        return self._list_to_text(words)
 
 
     def decrypt_text(self, ciphertext):
@@ -229,7 +229,7 @@ class AESHelper:
         self.key = key    # key has already been converted into SHA256 hash in ghostpass object
 
 
-    def aes_encrypt(self, raw):
+    def encrypt(self, raw):
         '''
         encrypt raw text into an encrypted AES ciphertext
         '''
@@ -239,7 +239,7 @@ class AESHelper:
         return base64.b64encode(iv + cipher.encrypt(raw))
 
 
-    def aes_decrypt(self, enc):
+    def decrypt(self, enc):
         '''
         decrypt encoded text into an raw text
         '''

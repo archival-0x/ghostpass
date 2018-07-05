@@ -259,18 +259,17 @@ class Ghostpass(object):
         return 0
 
 
-    def decrypt_all(self, password):
+    def decrypt_fields(self):
         '''
-        decrypt each field's password using AES-CBC
+        decrypt each field's password using AES-CBC after a session is opened.
         '''
 
-        # search for field and decrypt password
+        # search for field and decrypt password for each field use aeshelper
         for f in self.data:
             for key, value in f.iteritems():
-                if key == field:
-                    f[key] = (value[0], self.aeshelp.decrypt(value[1]))
+                f[key] = (value[0], self.aeshelp.decrypt(value[1]))
 
-
+        return 0
 
     @staticmethod
     def decrypt_file(ciphertext, corpus):

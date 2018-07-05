@@ -139,6 +139,7 @@ def main():
 
     # Initialize new session
     elif command == "init":
+
         # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
         logging.debug("Instantiating ghostpass object")
         gp = ghostpass.Ghostpass()
@@ -199,7 +200,10 @@ def main():
         # dump into pickle file
         logging.debug("Creating and writing context.pickle file")
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
-            _gp.decrypt_all()
+            # decrypt fields if data is present
+            if len(_gp.data) != 0:
+                logging.debug("Decrypting fields in data")
+                _gp.decrypt_fields()
             pickle.dump(_gp, context)
 
         print col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W
@@ -253,7 +257,7 @@ def main():
     elif command == "view":
 
         # calls view_field()
-        logging.debug("Outputting unencrypted field")
+        logging.debug("Outputting unencrypted field as a pretty-table")
         print "\n", _gp.view_field(args.command[1]), "\n"
         return 0
 
@@ -265,7 +269,7 @@ def main():
 
         # writing encrypted structure to original session
         with open(consts.DEFAULT_CONFIG_PATH + "/" + _gp.uuid, 'w') as context:
-            json_obj = json_pickle.encode(_gp)
+            json_obj = jsonpickle.encode(_gp)
             context.write(json_obj)
 
         # user calls 'close' to remove context.pickle
@@ -279,6 +283,7 @@ def main():
         return 0
 
     elif command == "list":
+
         # recursively list all sessions
         logging.debug("Listing all available sessions")
 
@@ -294,6 +299,7 @@ def main():
         return 0
 
     elif command == "encrypt":
+
         # since sessions are optional, we can check to see if it exists
         logging.debug("Checking if context file exists. If not, temporary object will be created")
         if os.path.isfile(consts.PICKLE_CONTEXT):
@@ -345,7 +351,7 @@ def main():
         _gp.init_state(masterpassword)
         del masterpassword
 
-        # decrypt the file, and export and output the resultant
+        # decrypt the file, and export and output
         with open(decrypt(args.command[1], args.command[2]), 'w') as export:
             print export
 
@@ -361,11 +367,10 @@ def main():
         # check if session is currently open as context
         logging.debug("Checking to see if specified session is opened")
         if os.path.isfile(consts.PICKLE_CONTEXT):
-            context =  open(consts.PICKLE_CONTEXT, 'r')
-            cgp = pickle.load(context)
-            context.close()
-            if cgp.uuid == args.command[1]:
-                raise ghostpass.GhostpassException("session is currently open. Please close before destructing")
+            with open(consts.PICKLE_CONTEXT, 'r') as context:
+                cgp = pickle.load(context)
+                if cgp.uuid == args.command[1]:
+                    raise ghostpass.GhostpassException("session is currently open. Please close before destructing")
 
         # explicitly get user permission, and delete the session
         yn = raw_input("\n\t> Are you sure you want to delete this session? (y / n) ")
