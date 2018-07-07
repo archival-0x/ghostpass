@@ -47,7 +47,7 @@ class Ghostpass(object):
         self.uuid = self.uuid           # for de/serialization purposes
         self.password = None            # represents master password (SHA256 encrypted)
         self.data = []                  # used to store key-value entries, AES encrypted with master password
-
+        self.encrypted = 0              # used as a flag for whether data has been AES encrypted or not
 
     def __repr__(self):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
@@ -229,6 +229,10 @@ class Ghostpass(object):
         changes and commit into session file
         '''
 
+        # set the flag as encrypted, as data is encrypted with AES
+        self.encrypted = 1
+
+        # iteratively encrypt each field's secret
         for field in self.data:
             for key, value in field.iteritems():
                 self.encrypt(key)
@@ -256,9 +260,10 @@ class Ghostpass(object):
         for f in self.data:
             for key, value in f.iteritems():
                 if key == field:
-                    f[key] = (value[0], self.aeshelp.encrypt(value[1]))
+                    f[key] = (self.aeshelp.encrypt(value[0]), self.aeshelp.encrypt(value[1]))
 
         return 0
+
 
     def encrypt_file(self, file):
         '''

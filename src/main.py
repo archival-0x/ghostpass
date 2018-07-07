@@ -334,8 +334,17 @@ def main():
         if len(args.command) == 3:
             # if optional second argument file (represents cleartext)
             _gp.encrypt_file(args.command[2])
+
+            # export encrypted file of cleartext
+
         else:
-            _gp.encrypt()
+            # check if changes have been stashed first
+            if _gp.encrypted != 1:
+                print col.O + "Changes have NOT been stashed. Stashing changes automatically."
+                _gp.stash_changes()
+
+            # export encrypted file of our secrets
+
 
         return 0
 
@@ -356,7 +365,7 @@ def main():
         del masterpassword
 
         # decrypt the file, and export and output
-        with open(decrypt(args.command[1], args.command[2]), 'w') as export:
+        with open(_gp.decrypt(args.command[1], args.command[2]), 'w') as export:
             print export
 
         return 0
