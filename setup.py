@@ -14,18 +14,13 @@ maintaining security and data integrity."""
 # Current absoluate path
 current = os.path.abspath(os.path.dirname(__file__))
 
-# Read the README file as LONG_DESC
-with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
-    LONG_DESC = f.read().strip()
-
 # Main setup method
 setup(
     name = NAME,
     version = VERSION,
     author = "Alan Cao",
     author_email = 'ex0dus@codemuch.tech',
-    description = "Devious, yet simplistic password management system",
-    long_description = LONG_DESC,
+    description = DESC,
     license = "GPLv3",
     url=REPO,
     download_url='{}/archive/v{}'.format(REPO, VERSION),

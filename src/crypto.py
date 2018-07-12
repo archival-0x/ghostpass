@@ -11,6 +11,7 @@ import base64
 from Crypto import Random
 from Crypto.Cipher import AES
 
+# symbol that represents the start
 MARKOV_START = "<START>"
 MIN_LINE_LEN = 4
 
@@ -28,7 +29,7 @@ class MarkovHelper:
 
 
     @staticmethod
-    def toTuple(t):
+    def _to_tuple(t):
         '''
         helper - given a variable, determine type and return as tuple
         '''
@@ -48,8 +49,10 @@ class MarkovHelper:
         # create a dict to store counts of word in corpus
     	count = {}
 
+        # for each word in the the list of words
     	for word in words:
-            # case-insensitive check
+
+            # our model is case-insensitive, so lower
             w = word.lower()
 
             # add to dict, and increment if word is repeated
@@ -152,10 +155,11 @@ class MarkovHelper:
     	lines = [re.findall(r"\w[\w']*", line) for line
     		in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.model)]
 
-        # append the MARKOV_START symbol for parsing purposes
-    	lines = [[MARKOV_START] + line + [MARKOV_START] for line
-    		in lines if len(line) >= MIN_LINE_LEN]
-
+        # append the MARKOV_START symbol for lines with longer than 4 words
+        for line in lines:
+            if len(line) >= MIN_LINE_LEN:
+                lines = [[MARKOV_START] + line + [MARKOV_START]]
+                
         # create our bigrams
     	bigrams1 = [[(line[word], line[word+1], line[word+2]) for word in range(len(line) - 2)] for line in lines]
     	bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
@@ -186,7 +190,7 @@ class MarkovHelper:
 
         markovDict = {}
         for bigram in self.bigrams:
-            markovDict[self._make_lower(self.toTuple(bigram[0]))] = bigram[1]
+            markovDict[self._make_lower(self._to_tuple(bigram[0]))] = bigram[1]
 
         while True:
             m = markovDict(self._make_lower(prev))

@@ -49,6 +49,7 @@ class Ghostpass(object):
         self.data = []                  # used to store key-value entries, AES encrypted with master password
         self.encrypted = 0              # used as a flag for whether data has been AES encrypted or not
 
+
     def __repr__(self):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
