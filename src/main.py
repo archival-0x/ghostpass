@@ -267,11 +267,12 @@ def main():
 
     elif command == "stash":
 
-        # calling stash_changes() to re-encrypt all passwords
-        logging.debug("Re-encrypting all passwords and writing to session")
-        _gp.stash_changes()
+        # calling encrypt_fields() to re-encrypt all secrets
+        logging.debug("Re-encrypting all secrets.")
+        _gp.encrypt_fields()
 
         # writing encrypted structure to original session
+        logging.debug("Writing to session.")
         with open(consts.DEFAULT_CONFIG_PATH + "/" + _gp.uuid, 'w') as context:
             json_obj = jsonpickle.encode(_gp)
             context.write(json_obj)
@@ -339,8 +340,8 @@ def main():
 
         else:
             # check if changes have been stashed first
-            if _gp.encrypted != 1:
-                print col.O + "Changes have NOT been stashed. Stashing changes automatically."
+            if _gp.encrypted == False:
+                print col.O + "Changes have NOT been stashed. Stashing changes automatically." + col.W
                 _gp.stash_changes()
 
             # export encrypted file of our secrets
@@ -358,11 +359,15 @@ def main():
         # since decrypt does not manipulate sessions, no context-checking is necessary
         logging.debug("Performing decryption")
 
-        # create object for decrypt functionality
+        # create temporary object for decrypt functionality
         _gp = ghostpass.Ghostpass()
         masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         _gp.init_state(masterpassword)
         del masterpassword
+
+        # load corpus file into object
+        logging.debug("Loading corpus")
+        _gp.load_corpus(args.command[1])
 
         # decrypt the file, and export and output
         with open(_gp.decrypt(args.command[1], args.command[2]), 'w') as export:

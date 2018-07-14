@@ -43,15 +43,26 @@ class Ghostpass(object):
         initializes the state of the instance variables we need
         '''
 
-        # TODO: Timestamp? Flag for open / closed ?
         self.uuid = self.uuid           # for de/serialization purposes
         self.password = None            # represents master password (SHA256 encrypted)
         self.data = []                  # used to store key-value entries, AES encrypted with master password
-        self.encrypted = 0              # used as a flag for whether data has been AES encrypted or not
+        self.encrypted = False          # used as a flag for whether data has been AES encrypted or not
 
 
     def __repr__(self):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
+
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['encrypted']
+        del state['aeshelp']
+        del state['model']
+        return state
+
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
 
     def init_state(self, password):
@@ -71,8 +82,6 @@ class Ghostpass(object):
         # since cleartext password is copied to object, make sure to delete
         del password
 
-        return 0
-
 
     def load_corpus(self, corpus_path):
         '''
@@ -84,10 +93,7 @@ class Ghostpass(object):
             raise GhostpassException("corpus path is not optional")
 
         # convert path into Markov-chain cipher and generate markov chain cipher
-        self.markov = crypto.MarkovHelper(corpus_path)
-        self.markov.init_mc()
-
-        return 0
+        self.model = crypto.MarkovHelper(corpus_path).init_mc()
 
 
     def export(self):
@@ -99,7 +105,7 @@ class Ghostpass(object):
         # Export to new JSON file
         with open(consts.DEFAULT_CONFIG_PATH + "/" + self.uuid, "w+") as f:
             f.write(jsonpickle.encode(self))
-        return 0
+
 
     ############################################################
     # Secret handling methods
@@ -181,8 +187,6 @@ class Ghostpass(object):
         finally:
             global_mutex.release()
 
-        return 0
-
 
     def remove_field(self, field):
         '''
@@ -202,8 +206,6 @@ class Ghostpass(object):
         finally:
             global_mutex.release()
 
-        return 0
-
 
     def overwrite_field(self, field, username, password):
         '''
@@ -221,24 +223,6 @@ class Ghostpass(object):
         finally:
             global_mutex.release()
 
-        return 0
-
-
-    def stash_changes(self):
-        '''
-        encrypt fields with AES-CBC, enabling the user to then move
-        changes and commit into session file
-        '''
-
-        # set the flag as encrypted, as data is encrypted with AES
-        self.encrypted = 1
-
-        # iteratively encrypt each field's secret
-        for field in self.data:
-            for key, value in field.iteritems():
-                self.encrypt(key)
-
-        return 0
 
     ############################################################
     # Crypto handlers
@@ -247,47 +231,41 @@ class Ghostpass(object):
     ############################################################
 
 
-    def encrypt(self, field):
+    def encrypt_fields(self):
         '''
-        encrypt field with AES-CBC, then our Markov-chain cipher,
-        then export it as a .txt file
+        encrypt each field using AES-CBC. Set encrypted flag to true
         '''
 
-        # check if field doesn't exist, and throw back error
-        if not self._check_field_existence(field):
-            raise GhostpassException("field {} doesn't exist!".format(field))
-
-        # search for field and encrypt password
+        # search for field and encrypt field with AES-CBC
         for f in self.data:
             for key, value in f.iteritems():
-                if key == field:
-                    f[key] = (self.aeshelp.encrypt(value[0]), self.aeshelp.encrypt(value[1]))
+                f[key] = (self.aeshelp.encrypt(value[0]), self.aeshelp.encrypt(value[1]))
 
-        return 0
-
-
-    def encrypt_file(self, file):
-        '''
-        encrypt cleartext file with AES-CBC, then our Markov-chain cipher,
-        then export it as a .txt file
-        '''
-        return 0
+        self.encrypted = True
 
 
     def decrypt_fields(self):
         '''
-        decrypt each field's password using AES-CBC after a session is opened.
+        decrypt each field using AES-CBC. Set encrypted flag to false
         '''
 
-        # search for field and decrypt password for each field use aeshelper
+        # search for field and decrypt field with AES-CBC
         for f in self.data:
             for key, value in f.iteritems():
-                f[key] = (value[0], self.aeshelp.decrypt(value[1]))
+                f[key] = (self.aeshelp.decrypt(value[0]), self.aeshelp.decrypt(value[1]))
 
+        self.encrypted = False
+
+
+    def encrypt_file(self, target_file):
+        '''
+        works independently - apply Markov chained cipher to create a ciphertext
+        out of a specified raw textfile
+        '''
         return 0
 
-    @staticmethod
-    def decrypt_file(ciphertext, corpus):
+
+    def decrypt_file(self, ciphertext):
         '''
         works independently - decrypt with specified corpus fle, then decrypt with
         AES-CBC, then export cleartext as .txt file

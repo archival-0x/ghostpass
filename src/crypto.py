@@ -101,6 +101,12 @@ class MarkovHelper:
     	else:
     		self.bigramsDict[word1b] = (word1, [word2])
 
+    @staticmethod
+    def _text_to_wordlist(text):
+    	words = re.findall(r"(?:\w[\w']*)|\.", text)
+    	words = [w.lower() if w != "." else config.startSymbol for w in words]
+    	return words
+
 
     @staticmethod
     def _list_to_text(str1):
@@ -148,7 +154,8 @@ class MarkovHelper:
 
     def init_mc(self):
         '''
-        initialize a new Markov-chained cipher
+        initialize a Markov-chained model for generating plaintext-like
+        ciphertext. This is used for both encryption AND decryption.
         '''
 
         # break specified corpus into lines using regex
@@ -159,7 +166,7 @@ class MarkovHelper:
         for line in lines:
             if len(line) >= MIN_LINE_LEN:
                 lines = [[MARKOV_START] + line + [MARKOV_START]]
-                
+
         # create our bigrams
     	bigrams1 = [[(line[word], line[word+1], line[word+2]) for word in range(len(line) - 2)] for line in lines]
     	bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
@@ -181,7 +188,7 @@ class MarkovHelper:
 
     def generate_text(self):
         '''
-        generate actual text from markov chain cipher, and returns text as a list
+        generate actual text from markov chain cipher, and returns text
         '''
 
         # create a list to store generated text
@@ -222,6 +229,8 @@ class MarkovHelper:
         '''
         decrypts the ciphertext, using Markov chain cipher
         '''
+
+        input = self._text_to_wordlist(ciphertext)
 
         return 0
 
