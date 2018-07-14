@@ -53,18 +53,6 @@ class Ghostpass(object):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['encrypted']
-        del state['aeshelp']
-        del state['model']
-        return state
-
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-
-
     def init_state(self, password):
         '''
         initializes the new session, immediately hashing the master password such
@@ -187,6 +175,8 @@ class Ghostpass(object):
         finally:
             global_mutex.release()
 
+        return 0
+
 
     def remove_field(self, field):
         '''
@@ -205,6 +195,8 @@ class Ghostpass(object):
             return 1
         finally:
             global_mutex.release()
+
+        return 0
 
 
     def overwrite_field(self, field, username, password):

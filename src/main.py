@@ -204,10 +204,12 @@ def main():
         # dump into pickle file
         logging.debug("Creating and writing context.pickle file")
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
-            # decrypt fields if data is present
+            # decrypt fields if any fields have been written
             if len(_gp.data) != 0:
                 logging.debug("Decrypting fields in data")
                 _gp.decrypt_fields()
+
+            # write object to context file
             pickle.dump(_gp, context)
 
         print col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W
