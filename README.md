@@ -107,7 +107,27 @@ ghostpass destruct <session>
 
 ```
 
-## 4. Contribution
+## 4. Example Usage
+
+__Standard initialization__
+
+```
+ghostpass init
+ghostpass open <SESSION>
+ghostpass add facebook
+ghostpass stash
+ghostpass close
+```
+
+__Session-less encryption and decryption__
+
+```
+ghostpass encrypt dictionary.txt important-secrets.txt
+ghostpass decrypt dictionary.txt important-secrets-encrypted.txt
+```
+
+
+## 5. Contribution
 
 To create a new branch for contributions:
 

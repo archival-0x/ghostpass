@@ -115,7 +115,7 @@ def main():
 
     # preemptive context file checking and opening - complete this for specific commands that require context file
     logging.debug("Checking if context file exists")
-    if command in ["add", "remove", "override", "view", "stash", "secrets"]:
+    if command in ["whoami", "add", "remove", "override", "view", "stash", "secrets"]:
         # check if context file exists before adding
         if not os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("no session has been opened")
@@ -162,6 +162,7 @@ def main():
         print col.G + "\nCreated new session! Remember your password, and use `ghostpass open <SESSION>` to open it!" + col.W
         return 0
 
+    # Open an initialized session
     elif command == "open":
 
         # checking to see if a session is already open

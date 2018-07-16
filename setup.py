@@ -1,4 +1,3 @@
-import os
 from setuptools import setup, find_packages
 
 from src import consts
@@ -10,9 +9,6 @@ REPO = "https://github.com/ex0dus-0x/ghostpass"
 DESC = """Ghostpass is a dead simple password management system that enables
 users to distribute cleartext-like ciphertext to the open web, while still
 maintaining security and data integrity."""
-
-# Current absoluate path
-current = os.path.abspath(os.path.dirname(__file__))
 
 # Main setup method
 setup(
@@ -39,7 +35,9 @@ setup(
     },
     install_requires=[
         'names',
-        'cryptography',
+        'pycrypto',
+        'jsonpickle',
+        'tabulate',
     ],
     classifiers=[
         'Development Status :: 1 - Planning',

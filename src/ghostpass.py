@@ -45,8 +45,8 @@ class Ghostpass(object):
 
         self.uuid = self.uuid           # for de/serialization purposes
         self.password = None            # represents master password (SHA256 encrypted)
-        self.data = []                  # used to store key-value entries, AES encrypted with master password
         self.encrypted = False          # used as a flag for whether data has been AES encrypted or not
+        self.data = []                  # used to store key-value entries, AES encrypted with master password
 
 
     def __repr__(self):
@@ -81,7 +81,8 @@ class Ghostpass(object):
             raise GhostpassException("corpus path is not optional")
 
         # convert path into Markov-chain cipher and generate markov chain cipher
-        self.model = crypto.MarkovHelper(corpus_path).init_mc()
+        self.model = crypto.MarkovHelper(corpus_path)
+        self.model.init_mc()
 
 
     def export(self):
@@ -254,6 +255,10 @@ class Ghostpass(object):
         works independently - apply Markov chained cipher to create a ciphertext
         out of a specified raw textfile
         '''
+
+        with open(target_file, 'r') as target:
+            print target.read()
+
         return 0
 
 
