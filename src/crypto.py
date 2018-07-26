@@ -17,10 +17,10 @@ import consts
 
 class MarkovHelper:
 
-    def __init__(self, model, inputstate=2):
+    def __init__(self, model):
 
-        self.model = open(model, 'r').read() # read the model as a list of chars
-        self.bigrams = []                    # stores bigram tuples for Markov Chain
+        self.model = open(model, 'r').read()    # read the model as a list of chars
+        self.bigrams = []                       # stores bigram tuples for Markov Chain
 
 
     def _compute_probabilities(self, words):
@@ -84,21 +84,9 @@ class MarkovHelper:
 
 
     def encrypt_text(self, cleartext):
-
-        inputData = []
-
-        # create a wordlist from raw cleartext
-        for word in cleartext.split():
-            inputData.append(word)
-
+        return 0
 
     def decrypt_text(self, ciphertext):
-        '''
-        decrypts the ciphertext, using Markov chain cipher
-        '''
-
-        input = utils._text_to_wordlist(ciphertext)
-
         return 0
 
 
