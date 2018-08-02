@@ -27,6 +27,50 @@ class Color:
     C = '\033[36m'  # cyan
     GR = '\033[37m' # gray
 
+
+# commands that take no input fields
+NO_FIELD = [
+    "init",
+    "whoami",
+    "list",
+    "secrets",
+    "close",
+    "encrypt",
+    "help"
+]
+
+# commands that require one input field
+REQUIRED_FIELD = [
+    "add",
+    "remove",
+    "override",
+    "view",
+    "destruct",
+    "override"
+]
+
+# commands that have optional input field
+OPTIONAL_FIELD = [
+    "open"
+]
+
+# commands that require two input fields
+REQUIRED_TWO_FIELD = [
+    "decrypt"
+]
+
+# commands that require a session to be opened
+REQUIRED_CONTEXT = [
+    "whoami",
+    "add",
+    "remove",
+    "override",
+    "view",
+    "stash",
+    "secrets",
+    "encrypt"
+]
+
 # dict represents all of our commands, plus their respective verbose help text
 COMMANDS = {
     'help': """

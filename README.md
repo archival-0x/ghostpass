@@ -91,10 +91,9 @@ ghostpass list
 ghostpass secrets
     - Shows all fields and respective secrets in current session
 
-ghostpass encrypt <corpus> <cleartext>
+ghostpass encrypt
     - Creates encrypted ciphertext with specified corpus of current session
-    - Works independent of whether user is in session or not
-    - If no session is opened, cleartext field is mandatory for session-less encryption
+    - Does not work independently
 
 ghostpass decrypt <corpus> <ciphertext>
     - Decrypts specific ciphertext with corpus and master key
@@ -103,7 +102,7 @@ ghostpass decrypt <corpus> <ciphertext>
 ghostpass destruct <session>
     - Destroys <session>
     - If only one session exists and session argument not provided,
-    that is opened as default
+    that is destructed as default
 
 ```
 

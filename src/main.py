@@ -85,26 +85,29 @@ def main():
     if check_arg(command) != 0:
         raise ghostpass.GhostpassException("invalid command")
 
-    # Preemptive argument checking to see if necessary (one) field is provided
-    # REQUIRED - add, remove, view, override, destruct
-    # OPTIONAL - open
-    # NO ARGS - init, list, secrets, close, help
+    # Preemptive argument checking
     logging.debug("Checking if specific commands satisfy with args specification")
-    if command in ["add", "remove", "view", "destruct", "override"] and len(args.command) != 2:
+    
+    # No fields - ./ghostpass COMMAND
+    if command in consts.NO_FIELD and len(args.command) > 1:
         man(command)
-        raise ghostpass.GhostpassException("{} command requires at least one field argument".format(command))
+        raise ghostpass.GhostpassException("Extraneous arguments supplied for {} command".format(command))
 
-    # Now check for arguments with multiple fields
-    # MULTIPLE - encrypt, decrypt
-    #   - note that for 'encrypt', one OR two arguments CAN be specified, and NO arguments will fail
-    elif command == "encrypt" and not (len(args.command) >= 2 and len(args.command) <= 3):
+    # Optional fields - ./ghostpass COMMAND or ./ghostpass COMMAND <field>
+    elif command in consts.OPTIONAL_FIELD:
+        if len(args.command) != 1 and len(args.command) != 2:
+            man(command)
+            raise ghostpass.GhostpassException("{} command requires at most one field argument".format(command))
+    
+    # Required field - ./ghostpass COMMAND <field>
+    elif command in consts.REQUIRED_FIELD and len(args.command) != 2:
         man(command)
-        raise ghostpass.GhostpassException("{} command requires at least one field argument".format(command))
-
-    #   - note that for 'decrypt', BOTH arguments are REQUIRED
-    elif command == "decrypt" and not len(args.command) == 3:
+        raise ghostpass.GhostpassException("{} command requires one field argument".format(command))
+    
+    # Two required fields - ./ghostpass COMMAND <field1> <field2>
+    elif command in consts.REQUIRED_TWO_FIELD and len(args.command) != 3:
         man(command)
-        raise ghostpass.GhostpassException("{} command requires at two field arguments".format(command))
+        raise ghostpass.GhostpassException("{} command requires two field arguments".format(command))
 
     # grab a list of all sessions within config path
     # TODO: robustness by checking validity of session file, to ensure no invalid/malicious JSON files are present
@@ -115,7 +118,7 @@ def main():
 
     # preemptive context file checking and opening - complete this for specific commands that require context file
     logging.debug("Checking if context file exists")
-    if command in ["whoami", "add", "remove", "override", "view", "stash", "secrets"]:
+    if command in consts.REQUIRED_CONTEXT:
         # check if context file exists before adding
         if not os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("no session has been opened")
@@ -125,6 +128,7 @@ def main():
         context =  open(consts.PICKLE_CONTEXT, 'r')
         _gp = pickle.load(context)
         context.close()
+
 
     logging.debug("Performing actual argument checking")
 
@@ -147,10 +151,11 @@ def main():
         # grabbing user input for master password and corpus path
         print col.P + "Instantiating Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W
         masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+        corpus_path = raw_input("> Enter INITIAL DOCUMENT KEY path: ")
 
         # initializing state with password
         logging.debug("Initializing ghostpass object state")
-        gp.init_state(masterpassword)
+        gp.init_state(masterpassword, corpus_path)
 
         # destroy cleartext password so is not cached
         del masterpassword
@@ -190,7 +195,11 @@ def main():
 
         # read JSON from session file
         logging.debug("Reading from specific session")
-        jsonstring = open(context_session).read()
+        try:
+            jsonstring = open(context_session).read()
+        except IOError:
+            raise ghostpass.GhostpassException("{} is not a valid session.".format(context_session)) 
+ 
         _gp = jsonpickle.decode(jsonstring)
 
         logging.debug(_gp) # __repr__ to validify open successful
@@ -199,7 +208,9 @@ def main():
         logging.debug("Performing password authentication")
         print col.P + "Opening session: " + _gp.uuid + col.W
         contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        if hashlib.sha256(contextpassword).digest() != _gp.password:
+        
+        # TODO: better password authentication - compare final doc keys generated from user-input
+        if hashlib.sha512(contextpassword).digest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
 
         # dump into pickle file
@@ -331,7 +342,7 @@ def main():
 
         # load corpus file into object
         logging.debug("Loading corpus")
-        _gp.load_corpus(args.command[1])
+        _gp.load_corpus()
 
         # perform actual encryption
         logging.debug("Performing encryption")

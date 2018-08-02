@@ -53,7 +53,7 @@ class Ghostpass(object):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
 
-    def init_state(self, password):
+    def init_state(self, password, corpus):
         '''
         initializes the new session, immediately hashing the master password such
         that runtime doesn't expose cleartext
@@ -62,26 +62,25 @@ class Ghostpass(object):
         # perform error-checking and hash using SHA256
         if password == "" or password == None:
             raise GhostpassException("master password is not optional")
-        self.password = hashlib.sha256(password.encode('utf-8')).digest()
+        self.password = hashlib.sha512(password.encode('utf-8')).digest()
+        
+        # open and store initial document key as list
+        with open(corpus, 'r') as corpus_file:
+            initial_doc = corpus_file.readlines()
 
-        # initialize a new AESHelper
-        self.aeshelp = crypto.AESHelper(self.password)
+        # generate a final document key
 
         # since cleartext password is copied to object, make sure to delete
         del password
 
 
-    def load_corpus(self, corpus_path):
+    def load_corpus(self):
         '''
-        load corpus file when doing actual encryption/decryption
+        convert our final document key into a Markov model
         '''
-
-        # ensure that path is not empty: corpus is not optional
-        if corpus_path == "" or corpus_path == None:
-            raise GhostpassException("corpus path is not optional")
 
         # convert path into Markov-chain cipher and generate markov chain cipher
-        self.model = crypto.MarkovHelper(corpus_path)
+        self.model = crypto.MarkovHelper(self.final_doc)
         self.model.init_mc()
 
 
