@@ -18,9 +18,9 @@ import consts
 class MarkovHelper:
 
     def __init__(self, model):
-
-        self.model = open(model, 'r').read()    # read the model as a list of chars
-        self.bigrams = []                       # stores bigram tuples for Markov Chain
+       
+        self.model = model  # we have already done work in converting the model into a list
+        self.bigrams = []   # stores bigram tuples for Markov Chain
 
 
     def _compute_probabilities(self, words):
@@ -93,8 +93,8 @@ class MarkovHelper:
 class AESHelper:
 
     def __init__(self, key):
-        self.blocksize = 32 # represents 32 byte-sized key
-        self.key = key      # key has already been converted into SHA256 hash in ghostpass object
+        self.blocksize = 64 # represents 32 byte-sized key
+        self.key = key      # key has already been converted into SHA512 hash in ghostpass object
 
     def encrypt(self, raw):
         '''

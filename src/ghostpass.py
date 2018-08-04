@@ -1,7 +1,7 @@
-'''
+"""
     ghostpass.py
         core interface for interacting with Ghostpass
-'''
+"""
 import names
 import random
 import hashlib
@@ -59,11 +59,18 @@ class Ghostpass(object):
         that runtime doesn't expose cleartext
         '''
 
-        # perform error-checking and hash using SHA256
+        # perform initial error-checking
         if password == "" or password == None:
             raise GhostpassException("master password is not optional")
+        if corpus == "" or corpus == None:
+            raise GhostpassException("corpus path is not optional")        
+
+        # hash the password using SHA512
         self.password = hashlib.sha512(password.encode('utf-8')).digest()
-        
+       
+        # create AESHelp object
+        self.aeshelp = crypto.AESHelper(self.password)
+ 
         # open and store initial document key as list
         with open(corpus, 'r') as corpus_file:
             initial_doc = corpus_file.readlines()
@@ -249,21 +256,17 @@ class Ghostpass(object):
         self.encrypted = False
 
 
-    def encrypt_file(self, target_file):
+    def encrypt_file(self):
         '''
-        works independently - apply Markov chained cipher to create a ciphertext
+        apply Markov chained cipher to create a ciphertext
         out of a specified raw textfile
         '''
-
-        with open(target_file, 'r') as target:
-            print target.read()
-
         return 0
 
 
     def decrypt_file(self, ciphertext):
         '''
-        works independently - decrypt with specified corpus fle, then decrypt with
+        works independently - decrypt with specified corpus file, then decrypt with
         AES-CBC, then export cleartext as .txt file
         '''
         return 0
