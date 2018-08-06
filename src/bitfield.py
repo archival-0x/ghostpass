@@ -1,12 +1,13 @@
 import utils
 import math
 
-"""
-a class for managing big amounts of bits (these bits are internally stored as bytes, except in the left and right extremes)
-"""
-class BigBitField:
 
-    def __init__(self, data = None, dataIsBytes = True):
+class BigBitField:
+    """
+    a class for managing big amounts of bits (these bits are internally stored as bytes, except in the left and right extremes)
+    """
+
+    def __init__(self, data=None, dataIsBytes=True):
         if data is None:
             data = []
 

@@ -82,6 +82,10 @@ ghostpass init
     - Creates a new ghostpass session with master password
     - Pseudo-random ID created to identify session
 """,
+    'whoami': """
+ghostpass whoami
+    - Outputs current session name, if opened.
+""",
     'open': """
 ghostpass open <session>
     - Opens ghostpass session with master password

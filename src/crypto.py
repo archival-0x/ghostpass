@@ -18,21 +18,50 @@ import consts
 class MarkovHelper:
 
     def __init__(self, model):
-       
-        self.model = model  # we have already done work in converting the model into a list
-        self.bigrams = []   # stores bigram tuples for Markov Chain
+        """
+        <Purpose>
+          Initializes our object with our initial document key, and an empty bigrams
+          list.
+
+        <Returns>
+          None
+        
+        """
+        self.model = model      # we have already done work in converting the model into a list
+        self.bigrams = []       # stores bigram tuples for Markov Chain
+
 
 
     def _compute_probabilities(self, words):
-    	'''
-        given a list of words, compute the probability (in a fraction) for each word
-        '''
 
         # check for repeats in a set of words
     	count = utils._count_repeats(words)
 
     	total = sum([c[1] for c in count])
         return [(c[0], (c[1], total)) for c in count]
+
+
+
+    def generate_key(self, hashpwd):
+        """
+        <Purpose>
+          This method takes an initial document key, and a SHA512 hash, and performs
+          the first round key-derivation function that produces a final document key.
+          Our hash is converted into a binary bit array (8-bits per bitstring), and
+          bit expansion with a factor of 3 is applied. The final expanded bit array
+          is converted to decimal, and used to determine positions in the initial wordlist.
+          A final wordlist of all those positions are set as the final document key.
+
+        <Returns>
+          None
+
+        """
+
+        # convert our hash into a viable list
+        
+
+        return 0
+
 
 
     def init_mc(self):
@@ -88,6 +117,7 @@ class MarkovHelper:
 
     def decrypt_text(self, ciphertext):
         return 0
+
 
 
 class AESHelper:

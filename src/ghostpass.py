@@ -75,19 +75,21 @@ class Ghostpass(object):
         with open(corpus, 'r') as corpus_file:
             initial_doc = corpus_file.readlines()
 
-        # generate a final document key
+        # generate a final document key, and initialize our Markov model
+        self.load_corpus(initial_doc)
 
         # since cleartext password is copied to object, make sure to delete
         del password
 
 
-    def load_corpus(self):
+    def load_corpus(self, initial_doc):
         '''
-        convert our final document key into a Markov model
+        convert our document key into a Markov model
         '''
 
         # convert path into Markov-chain cipher and generate markov chain cipher
-        self.model = crypto.MarkovHelper(self.final_doc)
+        self.model = crypto.MarkovHelper(initial_doc)
+        self.model.gen_key() # TODO
         self.model.init_mc()
 
 

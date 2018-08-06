@@ -1,4 +1,23 @@
 #!/usr/bin/env python2
+"""
+<Program Name>
+  main.py
+
+<Author>
+  Alan Cao <ex0dus@codemuch.tech>
+
+<Started>
+  May 2018
+
+<Purpose>
+  This is the entry file for Ghostpass console interactions. This file 
+  comprises of the main method that enables the user to initialize a
+  session and perform all operations needed to interact with that session.
+  Several helper methods are also provided, specifically for working together
+  with argparse in order to provide a better command-line experience for the
+  user.
+
+"""
 
 import argparse
 import sys
@@ -16,10 +35,16 @@ from consts import Color as col
 
 
 def man(argument):
-    '''
-    helper manpages-style method for displaying information on positional
-    arguments and any details
-    '''
+    """
+    <Purpose>
+      Helper manpages-style method for displaying information on positional
+      arguments and any details. It provides a much more verbose output
+      for interfacing with the command-line application
+    
+    <Returns>
+      None
+
+    """
 
     # Print header if no arg is provided
     if argument is None or argument == "all":
@@ -37,13 +62,23 @@ def man(argument):
         # otherwise, print available args
         if argument is None or argument == "all":
             sys.stdout.write("" + k + " ")
-    print "\n\nEnter ghostpass help <command> for more information about a specific command\n"
+   
+     print "\n\nEnter ghostpass help <command> for more information about a specific command\n"
+
+
+
 
 
 def check_arg(argument):
-    '''
-    ensures that passed argument can be supplied
-    '''
+    """
+    <Purpose>
+      Argument-checking method that ensures that the specified command could be found
+
+    <Returns>
+      0 for success
+      1 for failure
+
+    """
     if not argument in consts.COMMANDS.keys():
         print "Command '" + str(argument) + "' not found! Please specify one of these:\n"
         sys.stdout.write("\t")
@@ -54,7 +89,23 @@ def check_arg(argument):
     return 0
 
 
+
+
+
 def main():
+    """
+    <Purpose>
+      This is the main entry point to the Ghostpass command line
+      application. It initializes an argument parser, performs
+      preemptive checking, and then calls upon necessary modules
+      in order to work with the protocol
+    
+    <Returns>
+      0 for success
+      GhostpassException for errors
+    
+    """
+
     # Initialize parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbosity', dest='verbosity', type=int, help='output based on verbosity level')
@@ -166,10 +217,15 @@ def main():
 
         print col.G + "\nCreated new session! Remember your password, and use `ghostpass open <SESSION>` to open it!" + col.W
         return 0
+    
+    # Check what session we are currently in
+    elif command == "whoami":
+        print col.G + "\n" + _gp.uuid + "is currently open." + col.W        
+        return 0
 
     # Open an initialized session
     elif command == "open":
-
+        
         # checking to see if a session is already open
         logging.debug("Checking if context file exists")
         if os.path.isfile(consts.PICKLE_CONTEXT):
@@ -318,31 +374,6 @@ def main():
         return 0
 
     elif command == "encrypt":
-
-        # since sessions are optional, we can check to see if it exists
-        logging.debug("Checking if context file exists. If not, temporary object will be created")
-        if os.path.isfile(consts.PICKLE_CONTEXT):
-            # load object from pickle
-            logging.debug("Loading object from pickle")
-            context =  open(consts.PICKLE_CONTEXT, 'r')
-            _gp = pickle.load(context)
-            context.close()
-            print col.P + "Utilizing opened session for encryption: " + col.B + _gp.uuid + col.W
-        else:
-            # create a new temporary object for encryption
-            _gp = ghostpass.Ghostpass()
-            print col.P + "No session opened. Please supply master password for independent session-less encryption" + col.W
-            masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-
-            # initializing state with password
-            logging.debug("Initializing ghostpass object state")
-            _gp.init_state(masterpassword)
-
-            del masterpassword
-
-        # load corpus file into object
-        logging.debug("Loading corpus")
-        _gp.load_corpus()
 
         # perform actual encryption
         logging.debug("Performing encryption")

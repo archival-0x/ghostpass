@@ -1,5 +1,11 @@
 *.pyc
 *.pickle
+*.so
+*.o
+*.out
+
+example_corpus.txt
+
 env/
 build/
 *.egg-info/
