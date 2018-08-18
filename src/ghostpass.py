@@ -1,6 +1,11 @@
 """
-    ghostpass.py
-        core interface for interacting with Ghostpass
+<Program Name>
+  ghostpass.py
+
+<Purpose>
+  Core interface for interacting with the
+  ghostpass protocol
+
 """
 import names
 import random
@@ -31,17 +36,10 @@ class Ghostpass(object):
     # represents global pseudorandom identifying ID for session
     uuid = names.get_first_name() + names.get_first_name() + str(random.randrange(0, 100))
 
-    ############################################################
-    # Standard methods
-    #   - initializes Ghostpass context and enables writing to
-    #   session for portable reuse
-    ############################################################
-
-
     def __init__(self):
-        '''
+        """
         initializes the state of the instance variables we need
-        '''
+        """
 
         self.uuid = self.uuid           # for de/serialization purposes
         self.password = None            # represents master password (SHA256 encrypted)
@@ -50,14 +48,18 @@ class Ghostpass(object):
 
 
     def __repr__(self):
+        """
+        returns the object in a formatted string representation
+        """
+
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
 
     def init_state(self, password, corpus):
-        '''
+        """
         initializes the new session, immediately hashing the master password such
         that runtime doesn't expose cleartext
-        '''
+        """
 
         # perform initial error-checking
         if password == "" or password == None:
@@ -83,33 +85,26 @@ class Ghostpass(object):
 
 
     def load_corpus(self, initial_doc):
-        '''
-        convert our document key into a Markov model
-        '''
+        """
+        convert an initial document key into a Markov model
+        """
 
+        # TODO
         # convert path into Markov-chain cipher and generate markov chain cipher
         self.model = crypto.MarkovHelper(initial_doc)
-        self.model.gen_key() # TODO
+        self.model.generate_key()
         self.model.init_mc()
 
 
     def export(self):
-        '''
+        """
         using jsonpickle, create a new session file that stores the specific session data.
         the user can then re-open and "import" the object for further use and overwrite
-        '''
+        """
 
-        # Export to new JSON file
         with open(consts.DEFAULT_CONFIG_PATH + "/" + self.uuid, "w+") as f:
             f.write(jsonpickle.encode(self))
 
-
-    ############################################################
-    # Secret handling methods
-    #   - performs the actual mutation of self.data, which stores
-    #   all of the important and sensitive fields and secrets
-    #   (i.e username and password combos)
-    ############################################################
 
     def _check_field_existence(self, field):
         '''
@@ -249,7 +244,7 @@ class Ghostpass(object):
         '''
         decrypt each field using AES-CBC. Set encrypted flag to false
         '''
-
+        
         # search for field and decrypt field with AES-CBC
         for f in self.data:
             for key, value in f.iteritems():
@@ -263,6 +258,9 @@ class Ghostpass(object):
         apply Markov chained cipher to create a ciphertext
         out of a specified raw textfile
         '''
+        
+        # generate INI conf formatted text 
+
         return 0
 
 

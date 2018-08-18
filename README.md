@@ -1,23 +1,30 @@
 # ghostpass
 
-Ghostpass is a dead simple password management system that enables users to distribute cleartext-like ciphertext to the open web, while still maintaining security and data integrity.
+Ghostpass is a dead simple password management protocol that enables users to distribute cleartext-like ciphertext to the open web, while still maintaining security and data integrity.
 
-Don't use this yet! I'm not done. I'm just flexing my contributions.
+> Don't use this yet! I'm not done. I'm just flexing my contributions.
 
 ## 1. Introduction
-
 
 > The lack of use of third-party libraries and modules allow us to demonstrate the efficiencies of such a password manager using just
 > native Python functionality. Of course, utilizing such other libraries / modules are still feasible, but performance and security must
 > be evaluated accordingly.
 
+Ghostpass is a password management protocol that is designed with the purpose of transmitting secrets through the open web, while being able to maintain security and 
+
 ### 1.1 Problems
 
-1. Web-based password managers are centralized, and data breech for undiscovered vulnerability results in catastrophic events.
-2. Modern offline clients ( i.e KeePass) don't enable for fast distribution across hosts, and portability to unencrypt anymore.
+There's quite a bit of password managers that are out there today, so why even bother with Ghostpass? In order to answer this question, let's take a look at several different password managers "models" that already exist, and the problems that plague them:
+
+* __Web-based password managers__ are centralized, and data breeches because of undiscovered vulnerability results in catastrophic events.
+* __Offline clients__ ( i.e KeePass) don't enable for fast distribution across hosts and portability. They share a unified filetype that require KeePass-compliant client implementations in order to open.
+* __Deterministic password managers__, which are able to produce memory-less and session-less cryptographically secure passwords, fail because of varying password policies and the inability to keep state. Read more [here](https://tonyarcieri.com/4-fatal-flaws-in-deterministic-password-managers).
+
+We aim to fix these problems through a novel protocol that keep cryptographic insecurity at a minimum, enable for maximum portability, while still securely keeping state.
 
 ### 1.2 Features
 
+TODO
 
 ### 1.3 Important Definitions
 
@@ -29,26 +36,10 @@ __corpus__ - a file that is parsed for Markov chain generation
 
 ## 2. How does it all work?
 
-The idea of __ghostpass__ is presented as not a singular password manager, but rather a protocol that can implemented flexibly.
+Ghostpass is __NOT__ a singular password manager, but rather a protocol that can be employed through various languages and technologies. For more information about the designof the cryptographic protocol and an evaluation of its security, refer to the whitepaper (TODO).
 
-### Encryption Process
+For a simplified introduction, we see the protocol as a __two-round encryption process__ that includes a key-derivation function (KDF) and a textual steganography process.
 
-1. Client is opened (web, app, CLI).
-2. User creates master password and supplies corpus file.
-3. User stores key information
-4. AES Encrytion using master password
-5. Padding is added.
-6. Corpus file is Markov-chained and resultant ciphertext appears as cleartext
-8. Passwords distributed as singular text file or zipped up multiple text files
-
-### Decryption Process
-
-1. Client is opened
-2. User supplies master password and corpus file
-3. Padding is removed
-3. AES ciphertext is recovered from corpus ciphertext.
-4. AES Decryptio using master password
-5. User views sensitive information
 
 ## 3. Help
 
@@ -108,23 +99,13 @@ ghostpass destruct <session>
 
 ## 4. Example Usage
 
-__Standard initialization__
-
 ```
-ghostpass init
-ghostpass open <SESSION>
-ghostpass add facebook
-ghostpass stash
-ghostpass close
+$ ghostpass init
+$ ghostpass open <SESSION>
+$ ghostpass add facebook
+$ ghostpass stash
+$ ghostpass close
 ```
-
-__Session-less encryption and decryption__
-
-```
-ghostpass encrypt dictionary.txt important-secrets.txt
-ghostpass decrypt dictionary.txt important-secrets-encrypted.txt
-```
-
 
 ## 5. Contribution
 

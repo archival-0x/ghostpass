@@ -16,28 +16,39 @@ import utils
 import consts
 
 class MarkovHelper:
+    """
+    <Purpose>
+      The MarkovHelper class provides an interface to several methods that enable for the creation of a
+      Markov chain model, and enable encryption / decryption through the specified corpus. These methods
+      were largely based off of Dr. H. Moraldo's Markov textual steganography research, specified here:
+      https://github.com/hmoraldo/markovTextStego
+    """
 
-    def __init__(self, model):
-        """
-        <Purpose>
-          Initializes our object with our initial document key, and an empty bigrams
-          list.
-
-        <Returns>
-          None
+    def __init__(self, corpus_file):
         
-        """
-        self.model = model      # we have already done work in converting the model into a list
+        # open our initial dockey and read into a list 
+        with open(corpus_file, 'r') as cf:
+            self.corpus_file = cf.readlines()
+
+        self.model = []         # stores generated Markov model from final dockey
         self.bigrams = []       # stores bigram tuples for Markov Chain
 
 
-
     def _compute_probabilities(self, words):
+        """
+        <Purpose>
+          This method is core for the Markov chain generation process, as it first computes the number
+          of repeats within a corpus, and calculating the probability of the next work showing up.
+
+        <Returns>
+          List of words
+
+        """
 
         # check for repeats in a set of words
     	count = utils._count_repeats(words)
-
     	total = sum([c[1] for c in count])
+
         return [(c[0], (c[1], total)) for c in count]
 
 
@@ -57,8 +68,30 @@ class MarkovHelper:
 
         """
 
-        # convert our hash into a viable list
+        # hashstring into a decimal list
+        raw_str = binascii.unhexlify(hashpwd)    
+        dec_array = [ord(x) for x in raw_str]
+
+        # TODO: fix up 
+        # expand our list using an expansion factor
+        expanded_array = []
+        for dec in dec_array:
+            lut_val = EXPANSION_TABLE[dec]
+            expanded_array.append(lut_val >> 16)
+            expanded_array.append(lut_val >> 8)
+            expanded_array.append(lut_val)
+
         
+        # generate our final document key
+        self.corpus = []
+        for i, value in enumerate(self.corpus_file):
+            for dec in expanded_array:
+                if i == dec:
+                    self.corpus.append(document_key[dec])
+
+        
+        # delete initial key
+        del self.corpus_file        
 
         return 0
 
@@ -121,15 +154,24 @@ class MarkovHelper:
 
 
 class AESHelper:
+    """
+    <Purpose>
+        AESHelper is a class that provides an interface for AES-CBC
+        encryption and decryption. While the Ghostpass protocol does not
+        require the use of AES, we utilize it in this reference implementation
+        to show the plugability of other cryptographic protocols. AES in this
+        context is used to encrypt fields.
+    """
 
     def __init__(self, key):
         self.blocksize = 64 # represents 32 byte-sized key
         self.key = key      # key has already been converted into SHA512 hash in ghostpass object
 
+
     def encrypt(self, raw):
-        '''
+        """
         encrypt raw text into an encrypted AES ciphertext
-        '''
+        """
         raw = self._pad(raw)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
@@ -137,9 +179,9 @@ class AESHelper:
 
 
     def decrypt(self, enc):
-        '''
+        """
         decrypt encoded text into an raw text
-        '''
+        """
         enc = base64.b64decode(enc)
         iv = enc[:AES.block_size]
         cipher = AES.new(self.key, AES.MODE_CBC, iv)

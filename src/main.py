@@ -63,7 +63,7 @@ def man(argument):
         if argument is None or argument == "all":
             sys.stdout.write("" + k + " ")
    
-     print "\n\nEnter ghostpass help <command> for more information about a specific command\n"
+    print "\n\nEnter ghostpass help <command> for more information about a specific command\n"
 
 
 
@@ -412,7 +412,9 @@ def main():
 
         # load corpus file into object
         logging.debug("Loading corpus")
-        _gp.load_corpus(args.command[1])
+        with open(args.command[1], 'r') as cf:
+            corpus = cf.readlines()
+        _gp.load_corpus(corpus)
 
         # decrypt the file, and export and output
         with open(_gp.decrypt(args.command[1], args.command[2]), 'w') as export:
