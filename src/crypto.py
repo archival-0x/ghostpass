@@ -146,6 +146,7 @@ class MarkovHelper:
 
 
     def encrypt_text(self, cleartext):
+        # where cleartext is ciphertext
         return 0
 
     def decrypt_text(self, ciphertext):
@@ -153,19 +154,22 @@ class MarkovHelper:
 
 
 
+
+
 class AESHelper:
     """
     <Purpose>
-        AESHelper is a class that provides an interface for AES-CBC
-        encryption and decryption. While the Ghostpass protocol does not
-        require the use of AES, we utilize it in this reference implementation
-        to show the plugability of other cryptographic protocols. AES in this
-        context is used to encrypt fields.
+      AESHelper is a class that provides an interface for AES-CBC
+      encryption and decryption. While the Ghostpass protocol does not
+      require the use of AES, we utilize it in this reference implementation
+      to show the plugability of other cryptographic protocols. AES in this
+      context is used to encrypt fields.
+
     """
 
     def __init__(self, key):
-        self.blocksize = 64 # represents 32 byte-sized key
-        self.key = key      # key has already been converted into SHA512 hash in ghostpass object
+        self.blocksize = 64     # represents 32 byte-sized key
+        self.key = key          # key has already been converted into SHA512 hash in ghostpass object
 
 
     def encrypt(self, raw):

@@ -253,20 +253,23 @@ class Ghostpass(object):
         self.encrypted = False
 
 
-    def encrypt_file(self):
+    def encode_file(self):
         '''
         apply Markov chained cipher to create a ciphertext
         out of a specified raw textfile
         '''
         
         # generate INI conf formatted text 
-
+        self.model.encrypt_text()
         return 0
 
 
-    def decrypt_file(self, ciphertext):
+    def decode_file(self, ciphertext):
         '''
         works independently - decrypt with specified corpus file, then decrypt with
         AES-CBC, then export cleartext as .txt file
         '''
+        
+        with open(
+
         return 0

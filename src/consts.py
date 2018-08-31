@@ -1,11 +1,19 @@
-'''
+"""
+<Program Name>
     consts.py
-        Application-level constant variables
-'''
+
+<Purpose>
+    Application-level constant variables made available for all
+    files
+"""
+
 import os
+import time 
 
 NAME = "ghostpass"
 VERSION = "0.0.1"
+
+NOW_DATE = time.strftime("%Y-%m-%d-%H:%M:%S", time.gmtime())
 
 # filepath configuration constants
 DEFAULT_CONFIG_PATH = os.path.dirname(os.path.expanduser("~") + "/.config/ghostpass/")

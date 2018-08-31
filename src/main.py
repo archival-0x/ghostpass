@@ -375,23 +375,18 @@ def main():
 
     elif command == "encrypt":
 
-        # perform actual encryption
-        logging.debug("Performing encryption")
-        if len(args.command) == 3:
-            # if optional second argument file (represents cleartext)
-            _gp.encrypt_file(args.command[2])
+        # ensure that our changes have been committed back to the original session file
+        logging.debug("Checking if changes were stashed")     
+        if _gp.encrypted == False:
+            print col.O + "Changes have NOT been stashed. Stashing changes automatically." + col.W
+            _gp.stash_changes()
 
-            # export encrypted file of cleartext
-
-        else:
-            # check if changes have been stashed first
-            if _gp.encrypted == False:
-                print col.O + "Changes have NOT been stashed. Stashing changes automatically." + col.W
-                _gp.stash_changes()
-
-            # export encrypted file of our secrets
-
-
+        # export encrypted file of our secrets
+        encrypt_out = _gp.encode_files()
+        
+        # retrieve time and date, append to text
+        with open(consts.NOW_TIME + "-encrypted.txt", "wb") as output:
+            output.write(encrypt_out)
         return 0
 
     elif command == "decrypt":
@@ -404,22 +399,24 @@ def main():
         # since decrypt does not manipulate sessions, no context-checking is necessary
         logging.debug("Performing decryption")
 
-        # create temporary object for decrypt functionality
-        _gp = ghostpass.Ghostpass()
+        # create an isolated temporary object for decrypt functionality
+        decrypt_gp = ghostpass.Ghostpass()
         masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        _gp.init_state(masterpassword)
+        decrypt_gp.init_state(masterpassword)
         del masterpassword
 
         # load corpus file into object
         logging.debug("Loading corpus")
         with open(args.command[1], 'r') as cf:
             corpus = cf.readlines()
-        _gp.load_corpus(corpus)
+        decrypt_gp.load_corpus(corpus)
 
         # decrypt the file, and export and output
-        with open(_gp.decrypt(args.command[1], args.command[2]), 'w') as export:
-            print export
+        decrypt_out = decrypt_gp.decode_file(args.command[1], args.command[2])
 
+        # retrieve time and date, append to text
+        with open(consts.NOW_TIME + "-decrypted.txt", "wb") as output:
+            output.write(decrypt_out)
         return 0
 
     elif command == "destruct":
