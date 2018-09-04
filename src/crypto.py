@@ -1,13 +1,14 @@
-'''
+"""
     crypto.py
         Interface for crytographic operations, including AES and our custom Markov-chained cipher
-'''
+"""
 
 import re
 import hashlib
 import random
 import base64
 import math
+import binascii
 
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -24,14 +25,9 @@ class MarkovHelper:
       https://github.com/hmoraldo/markovTextStego
     """
 
-    def __init__(self, corpus_file):
-        
-        # open our initial dockey and read into a list 
-        with open(corpus_file, 'r') as cf:
-            self.corpus_file = cf.readlines()
-
-        self.model = []         # stores generated Markov model from final dockey
-        self.bigrams = []       # stores bigram tuples for Markov Chain
+    def __init__(self, initial_corpus):
+        self.initial_corpus = initial_corpus  # stores list of words from initial corpus
+        self.bigrams = []                     # stores bigram tuples for Markov Chain
 
 
     def _compute_probabilities(self, words):
@@ -72,11 +68,10 @@ class MarkovHelper:
         raw_str = binascii.unhexlify(hashpwd)    
         dec_array = [ord(x) for x in raw_str]
 
-        # TODO: fix up 
-        # expand our list using an expansion factor
+        # expand our list using an expansion factor of 3
         expanded_array = []
         for dec in dec_array:
-            lut_val = EXPANSION_TABLE[dec]
+            lut_val = consts.EXPANSION_TABLE[dec]
             expanded_array.append(lut_val >> 16)
             expanded_array.append(lut_val >> 8)
             expanded_array.append(lut_val)
@@ -84,14 +79,16 @@ class MarkovHelper:
         
         # generate our final document key
         self.corpus = []
-        for i, value in enumerate(self.corpus_file):
+        for i, value in enumerate(self.initial_corpus):
             for dec in expanded_array:
                 if i == dec:
-                    self.corpus.append(document_key[dec])
+                    self.corpus.append(self.initial_corpus[dec])
 
-        
+        # convert corpus into a string
+        self.corpus = "".join(self.corpus)
+
         # delete initial key
-        del self.corpus_file        
+        del self.initial_corpus 
 
         return 0
 
@@ -105,7 +102,7 @@ class MarkovHelper:
 
         # break specified corpus into lines using regex
     	lines = [re.findall(r"\w[\w']*", line) for line
-    		in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.model)]
+    		in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
 
         # append the MARKOV_START symbol for lines with longer than 4 words
         for line in lines:
@@ -115,7 +112,6 @@ class MarkovHelper:
         # generate our bigrams in the style of a list
     	bigrams1 = [[(line[word], line[word + 1], line[word + 2]) for word in range(len(line) - 2)] for line in lines]
     	bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
-
         bigrams = bigrams1 + bigrams2
 
     	bigramsDict = {}
@@ -144,10 +140,13 @@ class MarkovHelper:
         for bigram in fullBigrams:
             self.bigrams.append((bigram[0], self._compute_probabilities(bigram[1])))
 
+        # delete the final document key
+        del self.corpus
 
     def encrypt_text(self, cleartext):
         # where cleartext is ciphertext
         return 0
+
 
     def decrypt_text(self, ciphertext):
         return 0

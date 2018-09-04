@@ -68,7 +68,7 @@ class Ghostpass(object):
             raise GhostpassException("corpus path is not optional")        
 
         # hash the password using SHA512
-        self.password = hashlib.sha512(password.encode('utf-8')).digest()
+        self.password = hashlib.sha512(password.encode('utf-8')).hexdigest()
        
         # create AESHelp object
         self.aeshelp = crypto.AESHelper(self.password)
@@ -89,10 +89,13 @@ class Ghostpass(object):
         convert an initial document key into a Markov model
         """
 
-        # TODO
-        # convert path into Markov-chain cipher and generate markov chain cipher
+        # first, create the model object
         self.model = crypto.MarkovHelper(initial_doc)
-        self.model.generate_key()
+
+        # then, turn the initial key into a final key
+        self.model.generate_key(self.password)
+
+        # use the final key to generate the markov chain
         self.model.init_mc()
 
 
@@ -122,9 +125,9 @@ class Ghostpass(object):
 
 
     def view_field(self, field):
-        '''
+        """
         returns the unencrypted version of secret of a specific field.
-        '''
+        """
 
         # check if field doesn't exist, and throw back error
         if not self._check_field_existence(field):
@@ -144,10 +147,9 @@ class Ghostpass(object):
 
 
     def view_all(self):
-        '''
-        returns a pretty-printed grid formatted table
-        of all unencrypted secrets
-        '''
+        """
+        returns a pretty-printed grid formatted table of all unencrypted secrets
+        """
 
         table = []
 
@@ -162,9 +164,9 @@ class Ghostpass(object):
 
 
     def add_field(self, field, username, password):
-        '''
+        """
         add field with password to self.data if not exist, without any encryption done.
-        '''
+        """
 
         # check if field exists, and throw back error
         if self._check_field_existence(field):
@@ -183,9 +185,9 @@ class Ghostpass(object):
 
 
     def remove_field(self, field):
-        '''
+        """
         removes field from self.data if exists
-        '''
+        """
 
         # check if field doesn't exist, and throw back error
         if not self._check_field_existence(field):
@@ -204,9 +206,9 @@ class Ghostpass(object):
 
 
     def overwrite_field(self, field, username, password):
-        '''
+        """
         change specified field with new secret
-        '''
+        """
 
         # check if field doesn't exist, and throw back error
         if not self._check_field_existence(field):
@@ -218,13 +220,6 @@ class Ghostpass(object):
             self.data[field] = (username, password)
         finally:
             global_mutex.release()
-
-
-    ############################################################
-    # Crypto handlers
-    #    - perform session-less or session-dependent encryption
-    #    or decryption. Note that results are always text files
-    ############################################################
 
 
     def encrypt_fields(self):
@@ -269,7 +264,4 @@ class Ghostpass(object):
         works independently - decrypt with specified corpus file, then decrypt with
         AES-CBC, then export cleartext as .txt file
         '''
-        
-        with open(
-
         return 0
