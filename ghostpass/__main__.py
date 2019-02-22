@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 """
 <Program Name>
-  main.py
+  ghostpass 
 
 <Author>
   Alan Cao <ex0dus@codemuch.tech>
@@ -48,7 +48,7 @@ def man(argument):
 
     # Print header if no arg is provided
     if argument is None or argument == "all":
-        print "------------------\nAvailable Commands\n------------------\n"
+        print("------------------\nAvailable Commands\n------------------\n")
     else:
         check_arg(argument)
 
@@ -56,15 +56,15 @@ def man(argument):
     for k, v in consts.COMMANDS.items():
         # print specific help menu for argument
         if k == argument:
-            print "-----------"
-            print "\nHelp - " + k
-            print v
+            print("-----------")
+            print("\nHelp - " + k)
+            print(v)
+
         # otherwise, print available args
         if argument is None or argument == "all":
             sys.stdout.write("" + k + " ")
    
-    print "\n\nEnter ghostpass help <command> for more information about a specific command\n"
-
+    print("\n\nEnter ghostpass help <command> for more information about a specific command\n")
 
 
 
@@ -80,12 +80,13 @@ def check_arg(argument):
 
     """
     if not argument in consts.COMMANDS.keys():
-        print "Command '" + str(argument) + "' not found! Please specify one of these:\n"
+        print("Command '" + str(argument) + "' not found! Please specify one of these:\n")
         sys.stdout.write("\t")
         for arg in consts.COMMANDS:
             sys.stdout.write("" + arg + " ")
-        print "\n\nFor more about each command individually, use 'ghostpass help <command>'"
+        print("\n\nFor more about each command individually, use 'ghostpass help <command>'")
         return 1
+
     return 0
 
 
@@ -176,7 +177,7 @@ def main():
 
         # load object from pickle
         logging.debug("Loading object from pickle")
-        context =  open(consts.PICKLE_CONTEXT, 'r')
+        context = open(consts.PICKLE_CONTEXT, 'r')
         _gp = pickle.load(context)
         context.close()
 
@@ -185,24 +186,23 @@ def main():
 
     # Print help for specified argument
     if command == "help":
+        
         # Print help for specific command (if passed)
         if len(args.command) == 2:
             man(args.command[1])
-        elif len(args.command) == 1:
+        else:
             man(None)
-        return 0
 
-    # Initialize new session
     elif command == "init":
-
-        # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
         logging.debug("Instantiating ghostpass object")
+ 
+        # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
         gp = ghostpass.Ghostpass()
 
         # grabbing user input for master password and corpus path
-        print col.P + "Instantiating Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W
+        print(col.P + "Instantiating Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W)
         masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        corpus_path = raw_input("> Enter INITIAL DOCUMENT KEY path: ")
+        corpus_path = raw_input("> Enter DOCUMENT KEY path: ")
 
         # initializing state with password
         logging.debug("Initializing ghostpass object state")
@@ -215,15 +215,12 @@ def main():
         logging.debug("Exporting ghostpass to JSON")
         gp.export()
 
-        print col.G + "\nCreated new session! Remember your password, and use `ghostpass open <SESSION>` to open it!" + col.W
-        return 0
-    
-    # Check what session we are currently in
-    elif command == "whoami":
-        print col.G + "\n" + _gp.uuid + "is currently open." + col.W        
-        return 0
+        print(col.G + "\nCreated new session! Remember your password, and use `ghostpass open <SESSION>` to open it!" + col.W)
 
-    # Open an initialized session
+
+    elif command == "whoami":
+        print(col.G + "\n" + _gp.uuid + "is currently open." + col.W)
+
     elif command == "open":
         
         # checking to see if a session is already open
@@ -236,7 +233,7 @@ def main():
         if len(args.command) == 1:
 
             # if multiple sessions exist, print man, and throw exception
-            print col.O + "No session name specified, checking if only one (default) session exists..." + col.W
+            print(col.O + "No session name specified, checking if only one (default) session exists..." + col.W)
             if len(sessions) > 1:
                 man("open")
                 raise ghostpass.GhostpassException("no session argument specified, but multiple exist. Please specify session for opening.")
@@ -262,16 +259,16 @@ def main():
 
         # password authentication
         logging.debug("Performing password authentication")
-        print col.P + "Opening session: " + _gp.uuid + col.W
+        print(col.P + "Opening session: " + _gp.uuid + col.W)
         contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         
-        # TODO: better password authentication - compare final doc keys generated from user-input
         if hashlib.sha512(contextpassword).digest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
 
         # dump into pickle file
         logging.debug("Creating and writing context.pickle file")
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
+
             # decrypt fields if any fields have been written
             if len(_gp.data) != 0:
                 logging.debug("Decrypting fields in data")
@@ -280,23 +277,21 @@ def main():
             # write object to context file
             pickle.dump(_gp, context)
 
-        print col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W
-        return 0
+        print(col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W)
+
 
     elif command == "close":
-        # check if context.pickle exists, and deletes it
         logging.debug("Checking to see if context exists, and deleting")
+        
         try:
             os.remove(consts.PICKLE_CONTEXT)
         except OSError: # uses exception handler in case file wasn't available in first place
-            print col.O + "No session opened, so none closed" + col.W
-            return 0
+            print(col.O + "No session opened, so none closed" + col.W)
+            return
+        print(col.G + "Session closed!" + col.W)
 
-        print col.G + "Session successfully closed!" + col.W
-        return 0
 
     elif command == "add":
-
         print col.P + "Adding field: " + args.command[1] + col.W + "\n"
 
         # retrieve secret for specific field
@@ -313,65 +308,51 @@ def main():
         # ensure cleartext secret is NOT cached
         del secret
 
-        return 0
 
     elif command == "remove":
-
-        print col.P + "Removing field: " + args.command[1] + col.W
+        logging.debug("Removing field " + args.command[1])
 
         # securely remove field and secret from session context
         if _gp.remove_field(args.command[1]) == 0:
-            print col.G + "Success! Removed {}".format(args.command[1]) + col.W
+            print(col.G + "Success! Removed {}".format(args.command[1]) + col.W)
             with open(consts.PICKLE_CONTEXT, 'wb') as context:
                 pickle.dump(_gp, context)
         else:
             raise ghostpass.GhostpassException("unable to remove field: {}".format(args.command[1]))
-        return 0
+
 
     elif command == "view":
-
-        # calls view_field()
         logging.debug("Outputting unencrypted field as a pretty-table")
         print "\n", _gp.view_field(args.command[1]), "\n"
-        return 0
+
 
     elif command == "stash":
-
-        # calling encrypt_fields() to re-encrypt all secrets
         logging.debug("Re-encrypting all secrets.")
         _gp.encrypt_fields()
 
-        # writing encrypted structure to original session
         logging.debug("Writing to session.")
         with open(consts.DEFAULT_CONFIG_PATH + "/" + _gp.uuid, 'w') as context:
             json_obj = jsonpickle.encode(_gp)
             context.write(json_obj)
 
-        # user calls 'close' to remove context.pickle
-        return 0
 
     elif command == "secrets":
-
-        # list out all secrets for particular session
         logging.debug("Listing all secrets for this session")
-        print "\n", _gp.view_all(), "\n"
-        return 0
+        print("\n", _gp.view_all(), "\n")
+
 
     elif command == "list":
-
-        # recursively list all sessions
         logging.debug("Listing all available sessions")
 
-        # if no session are available
         if len(sessions) == 0:
-            print col.O + "No sessions available! Use `ghostpass init` to create a new one!" + col.W
+            print(col.O + "No sessions available! Use `ghostpass init` to create a new one!" + col.W)
             return 0
 
-        print "------------------\nAvailable Sessions\n------------------\n"
+        print("------------------\nAvailable Sessions\n------------------\n")
         for s in sessions:
-            print s
-        print "\n-----------\n"
-        return 0
+            print(s)
+        print("\n-----------\n")
+
 
     elif command == "encrypt":
 
@@ -387,7 +368,7 @@ def main():
         # retrieve time and date, append to text
         with open(consts.NOW_TIME + "-encrypted.txt", "wb") as output:
             output.write(encrypt_out)
-        return 0
+
 
     elif command == "decrypt":
 
@@ -440,7 +421,8 @@ def main():
             os.remove(consts.DEFAULT_CONFIG_PATH + "/" + args.command[1])
             print "\n" + col.G + "Succesfully deleted session " + args.command[1] + "!" + col.W
 
-        return 0
+    return 0
+
 
 
 if __name__ == '__main__':

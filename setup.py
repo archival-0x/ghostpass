@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-from src import consts
+from ghostpass import consts
 
 # Important constants
 NAME = consts.NAME
@@ -30,7 +30,7 @@ setup(
     packages = find_packages(exclude=('tests',)),
     entry_points = {
         'console_scripts': [
-            'ghostpass=src.main:main'
+            'ghostpass=ghostpass.__main__:main'
         ],
     },
     install_requires=[
