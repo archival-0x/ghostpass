@@ -1,18 +1,12 @@
 # ghostpass
 
+> WARNING: still WIP!
+
 Ghostpass is a dead simple password management protocol that enables users to distribute cleartext-like ciphertext to the open web, while still maintaining security and data integrity.
 
-> Don't use this yet! I'm not done. I'm just flexing my contributions.
+## intro
 
-## 1. Introduction
-
-> The lack of use of third-party libraries and modules allow us to demonstrate the efficiencies of such a password manager using just
-> native Python functionality. Of course, utilizing such other libraries / modules are still feasible, but performance and security must
-> be evaluated accordingly.
-
-Ghostpass is a password management protocol that is designed with the purpose of transmitting secrets through the open web, while being able to maintain security and 
-
-### 1.1 Problems
+Ghostpass is a password management protocol that is designed with the purpose of transmitting secrets through the open web, while being able to maintain security and integrity.
 
 There's quite a bit of password managers that are out there today, so why even bother with Ghostpass? In order to answer this question, let's take a look at several different password managers "models" that already exist, and the problems that plague them:
 
@@ -20,31 +14,32 @@ There's quite a bit of password managers that are out there today, so why even b
 * __Offline clients__ ( i.e KeePass) don't enable for fast distribution across hosts and portability. They share a unified filetype that require KeePass-compliant client implementations in order to open.
 * __Deterministic password managers__, which are able to produce memory-less and session-less cryptographically secure passwords, fail because of varying password policies and the inability to keep state. Read more [here](https://tonyarcieri.com/4-fatal-flaws-in-deterministic-password-managers).
 
-We aim to fix these problems through a novel protocol that keep cryptographic insecurity at a minimum, enable for maximum portability, while still securely keeping state.
-
-### 1.2 Features
-
-TODO
-
-### 1.3 Important Definitions
-
-__secret__ - a key-value representation of a username and its password
-
-__field__ - the name the identifies a specific secret
-
-__corpus__ - a file that is parsed for Markov chain generation
-
-## 2. How does it all work?
+We aim to fix these problems through a novel protocol that keep cryptographic insecurity at a minimum, enable for maximum portability, while still securely keeping
+state.
 
 Ghostpass is __NOT__ a singular password manager, but rather a protocol that can be employed through various languages and technologies. For more information about the designof the cryptographic protocol and an evaluation of its security, refer to the whitepaper (TODO).
 
 For a simplified introduction, we see the protocol as a __two-round encryption process__ that includes a key-derivation function (KDF) and a textual steganography process.
 
+## install
 
-## 3. Help
+With `pip` (TODO):
 
 ```
+$ pip install ghostpass
+```
 
+Manually (use `virtualenv` for dev environment):
+
+```
+$ git clone https://github.com/ex0dus-0x/ghostpass.git
+$ cd ghostpass/
+$ python setup.py install
+```
+
+## usage
+
+```
 Available Commands:
 
 ghostpass help <command>
@@ -97,7 +92,7 @@ ghostpass destruct <session>
 
 ```
 
-## 4. Example Usage
+Example use case:
 
 ```
 $ ghostpass init
@@ -107,7 +102,7 @@ $ ghostpass stash
 $ ghostpass close
 ```
 
-## 5. Contribution
+## contribute
 
 To create a new branch for contributions:
 
@@ -131,7 +126,7 @@ $ source env/bin/activate
 $ pip install -r requirements.txt
 ```
 
-## TODO
+## todo
 
-* Robust file validity to enforce no tampering
-* Uniform pickl-ing rather than JSON de/serialiazation for session inits
+* [ ] Robust file validity to enforce no tampering
+* [ ] Uniform pickl-ing rather than JSON de/serialiazation for session inits
