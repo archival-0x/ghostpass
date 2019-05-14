@@ -1,4 +1,5 @@
-jsonpickle==0.9.6
+jsonpickle==1.1
 names==0.3.0
-pycrypto==2.6.1
-tabulate==0.8.2
+pkg-resources==0.0.0
+pycrypto>=2.6.2
+tabulate==0.8.3
