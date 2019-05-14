@@ -2,7 +2,6 @@
     crypto.py
         Interface for crytographic operations, including AES and our custom Markov-chained cipher
 """
-
 import re
 import hashlib
 import random
@@ -13,8 +12,9 @@ import binascii
 from Crypto import Random
 from Crypto.Cipher import AES
 
-import utils
-import consts
+import ghostpass.utils as utils
+import ghostpass.consts as consts
+
 
 class MarkovHelper:
     """
@@ -40,11 +40,8 @@ class MarkovHelper:
           List of words
 
         """
-
-        # check for repeats in a set of words
-    	count = utils._count_repeats(words)
-    	total = sum([c[1] for c in count])
-
+        count = utils._count_repeats(words)
+        total = sum([c[1] for c in count])
         return [(c[0], (c[1], total)) for c in count]
 
 
@@ -65,7 +62,7 @@ class MarkovHelper:
         """
 
         # hashstring into a decimal list
-        raw_str = binascii.unhexlify(hashpwd)    
+        raw_str = binascii.unhexlify(hashpwd)
         dec_array = [ord(x) for x in raw_str]
 
         # expand our list using an expansion factor of 3
@@ -76,7 +73,7 @@ class MarkovHelper:
             expanded_array.append(lut_val >> 8)
             expanded_array.append(lut_val)
 
-        
+
         # generate our final document key
         self.corpus = []
         for i, value in enumerate(self.initial_corpus):
@@ -86,11 +83,7 @@ class MarkovHelper:
 
         # convert corpus into a string
         self.corpus = "".join(self.corpus)
-
-        # delete initial key
-        del self.initial_corpus 
-
-        return 0
+        del self.initial_corpus
 
 
 
@@ -101,8 +94,8 @@ class MarkovHelper:
         '''
 
         # break specified corpus into lines using regex
-    	lines = [re.findall(r"\w[\w']*", line) for line
-    		in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
+        lines = [re.findall(r"\w[\w']*", line) for line
+                 in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
 
         # append the MARKOV_START symbol for lines with longer than 4 words
         for line in lines:
@@ -110,13 +103,12 @@ class MarkovHelper:
                 lines = [[consts.MARKOV_START] + line + [consts.MARKOV_START]]
 
         # generate our bigrams in the style of a list
-    	bigrams1 = [[(line[word], line[word + 1], line[word + 2]) for word in range(len(line) - 2)] for line in lines]
-    	bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
+        bigrams1 = [[(line[word], line[word + 1], line[word + 2]) for word in range(len(line) - 2)] for line in lines]
+        bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
         bigrams = bigrams1 + bigrams2
 
-    	bigramsDict = {}
-
-    	for line in bigrams:
+        bigramsDict = {}
+        for line in bigrams:
             for bigram in line:
 
                 # where the first element is the input state, with two works (hence BIgram)
@@ -128,13 +120,13 @@ class MarkovHelper:
 
                 # check if our dict already contains the inputState, update by adding an output state
                 if inputState in bigramsDict:
-                	(w1, w2) = bigramsDict[inputState]
-                	w2.append(outputState)
+                    (w1, w2) = bigramsDict[inputState]
+                    w2.append(outputState)
                 else:
-                	bigramsDict[inputState] = (word1, [outputState])
+                    bigramsDict[inputState] = (word1, [outputState])
 
         # at this point, fullBigrams contains the markovChain with probabilities in fractions
-    	fullBigrams = bigramsDict.values()
+        fullBigrams = bigramsDict.values()
 
         # create final model with probability of next transition state
         for bigram in fullBigrams:
@@ -143,8 +135,8 @@ class MarkovHelper:
         # delete the final document key
         del self.corpus
 
+
     def encrypt_text(self, cleartext):
-        # where cleartext is ciphertext
         return 0
 
 
@@ -163,7 +155,6 @@ class AESHelper:
       require the use of AES, we utilize it in this reference implementation
       to show the plugability of other cryptographic protocols. AES in this
       context is used to encrypt fields.
-
     """
 
     def __init__(self, key):

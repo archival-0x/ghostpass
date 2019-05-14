@@ -7,23 +7,21 @@
   ghostpass protocol
 
 """
-import names
 import random
-import hashlib
 import json
 import jsonpickle
+import names
+import hashlib
 import threading
 import tabulate
 
-import crypto
-import consts
-
-from consts import Color as color
+import ghostpass.crypto as crypto
+from ghostpass.consts import Color as color
 
 # Define a custom exception
 class GhostpassException(Exception):
     def __init__(self, message):
-        print color.R + "[!] Error: " + message + color.W
+        print(color.R + "[!] Error: " + message + color.W)
         exit(1)
 
 
@@ -40,7 +38,6 @@ class Ghostpass(object):
         """
         initializes the state of the instance variables we need
         """
-
         self.uuid = self.uuid           # for de/serialization purposes
         self.password = None            # represents master password (SHA256 encrypted)
         self.encrypted = False          # used as a flag for whether data has been AES encrypted or not
@@ -51,7 +48,6 @@ class Ghostpass(object):
         """
         returns the object in a formatted string representation
         """
-
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
 
@@ -60,19 +56,17 @@ class Ghostpass(object):
         initializes the new session, immediately hashing the master password such
         that runtime doesn't expose cleartext
         """
-
-        # perform initial error-checking
         if password == "" or password == None:
             raise GhostpassException("master password is not optional")
         if corpus == "" or corpus == None:
-            raise GhostpassException("corpus path is not optional")        
+            raise GhostpassException("corpus path is not optional")
 
         # hash the password using SHA512
         self.password = hashlib.sha512(password.encode('utf-8')).hexdigest()
-       
+
         # create AESHelp object
         self.aeshelp = crypto.AESHelper(self.password)
- 
+
         # open and store initial document key as list
         with open(corpus, 'r') as corpus_file:
             initial_doc = corpus_file.readlines()
@@ -86,16 +80,10 @@ class Ghostpass(object):
 
     def load_corpus(self, initial_doc):
         """
-        convert an initial document key into a Markov model
+        instanstiate Markov object and a Markov chain
         """
-
-        # first, create the model object
         self.model = crypto.MarkovHelper(initial_doc)
-
-        # then, turn the initial key into a final key
         self.model.generate_key(self.password)
-
-        # use the final key to generate the markov chain
         self.model.init_mc()
 
 
@@ -104,23 +92,19 @@ class Ghostpass(object):
         using jsonpickle, create a new session file that stores the specific session data.
         the user can then re-open and "import" the object for further use and overwrite
         """
-
         with open(consts.DEFAULT_CONFIG_PATH + "/" + self.uuid, "w+") as f:
             f.write(jsonpickle.encode(self))
 
 
     def _check_field_existence(self, field):
-        '''
+        """
         check to see if the specified field already exists in
         our set of data
-        '''
-
-        # for each field, check if the key is same as the field specified
+        """
         for f in self.data:
             for k, v in f.iteritems():
                 if k == field:
                     return True
-
         return False
 
 
@@ -128,8 +112,6 @@ class Ghostpass(object):
         """
         returns the unencrypted version of secret of a specific field.
         """
-
-        # check if field doesn't exist, and throw back error
         if not self._check_field_existence(field):
             raise GhostpassException("field {} doesn't exist!".format(field))
 
@@ -150,16 +132,7 @@ class Ghostpass(object):
         """
         returns a pretty-printed grid formatted table of all unencrypted secrets
         """
-
-        table = []
-
-        # append values within fields into list for pretty-print
-        for field in self.data:
-            for key, value in field.iteritems():
-                temp = [key, value[0], value[1]]
-                table.append(temp)
-
-        # return a tabulated version
+        table = [[key, value[0], value[1]] for key, value in field.iteritems() for field in self.data]
         return tabulate.tabulate(table, headers=["Field", "Username", "Password"])
 
 
@@ -167,8 +140,6 @@ class Ghostpass(object):
         """
         add field with password to self.data if not exist, without any encryption done.
         """
-
-        # check if field exists, and throw back error
         if self._check_field_existence(field):
             raise GhostpassException("field {} already exists!".format(field))
 
@@ -181,15 +152,11 @@ class Ghostpass(object):
         finally:
             global_mutex.release()
 
-        return 0
-
 
     def remove_field(self, field):
         """
         removes field from self.data if exists
         """
-
-        # check if field doesn't exist, and throw back error
         if not self._check_field_existence(field):
             raise GhostpassException("field {} doesn't exist!".format(field))
 
@@ -202,15 +169,11 @@ class Ghostpass(object):
         finally:
             global_mutex.release()
 
-        return 0
-
 
     def overwrite_field(self, field, username, password):
         """
         change specified field with new secret
         """
-
-        # check if field doesn't exist, and throw back error
         if not self._check_field_existence(field):
             raise GhostpassException("field {} doesn't exist!".format(field))
 
@@ -226,12 +189,9 @@ class Ghostpass(object):
         '''
         encrypt each field using AES-CBC. Set encrypted flag to true
         '''
-
-        # search for field and encrypt field with AES-CBC
         for f in self.data:
             for key, value in f.iteritems():
                 f[key] = (self.aeshelp.encrypt(value[0]), self.aeshelp.encrypt(value[1]))
-
         self.encrypted = True
 
 
@@ -239,12 +199,9 @@ class Ghostpass(object):
         '''
         decrypt each field using AES-CBC. Set encrypted flag to false
         '''
-        
-        # search for field and decrypt field with AES-CBC
         for f in self.data:
             for key, value in f.iteritems():
                 f[key] = (self.aeshelp.decrypt(value[0]), self.aeshelp.decrypt(value[1]))
-
         self.encrypted = False
 
 
@@ -253,10 +210,7 @@ class Ghostpass(object):
         apply Markov chained cipher to create a ciphertext
         out of a specified raw textfile
         '''
-        
-        # generate INI conf formatted text 
         self.model.encrypt_text()
-        return 0
 
 
     def decode_file(self, ciphertext):

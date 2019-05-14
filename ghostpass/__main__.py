@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
 <Program Name>
-  ghostpass 
+  ghostpass
 
 <Author>
   Alan Cao <ex0dus@codemuch.tech>
@@ -10,7 +10,7 @@
   May 2018
 
 <Purpose>
-  This is the entry file for Ghostpass console interactions. This file 
+  This is the entry file for Ghostpass console interactions. This file
   comprises of the main method that enables the user to initialize a
   session and perform all operations needed to interact with that session.
   Several helper methods are also provided, specifically for working together
@@ -18,20 +18,17 @@
   user.
 
 """
-
-import argparse
-import sys
 import os
+import sys
 import logging
+import argparse
 import hashlib
 import pickle
 import jsonpickle
+import getpass
 
-import consts
-import ghostpass
-
-from getpass import getpass
-from consts import Color as col
+import ghostpass.ghostpass as ghostpass
+from ghostpass.consts import Color as col
 
 
 def man(argument):
@@ -40,7 +37,7 @@ def man(argument):
       Helper manpages-style method for displaying information on positional
       arguments and any details. It provides a much more verbose output
       for interfacing with the command-line application
-    
+
     <Returns>
       None
 
@@ -54,16 +51,12 @@ def man(argument):
 
     # Iterate over commands and check to see if any match argument, if provided
     for k, v in consts.COMMANDS.items():
-        # print specific help menu for argument
         if k == argument:
             print("-----------")
             print("\nHelp - " + k)
             print(v)
-
-        # otherwise, print available args
         if argument is None or argument == "all":
             sys.stdout.write("" + k + " ")
-   
     print("\n\nEnter ghostpass help <command> for more information about a specific command\n")
 
 
@@ -86,7 +79,6 @@ def check_arg(argument):
             sys.stdout.write("" + arg + " ")
         print("\n\nFor more about each command individually, use 'ghostpass help <command>'")
         return 1
-
     return 0
 
 
@@ -100,11 +92,11 @@ def main():
       application. It initializes an argument parser, performs
       preemptive checking, and then calls upon necessary modules
       in order to work with the protocol
-    
+
     <Returns>
       0 for success
       GhostpassException for errors
-    
+
     """
 
     # Initialize parser
@@ -139,7 +131,7 @@ def main():
 
     # Preemptive argument checking
     logging.debug("Checking if specific commands satisfy with args specification")
-    
+
     # No fields - ./ghostpass COMMAND
     if command in consts.NO_FIELD and len(args.command) > 1:
         man(command)
@@ -150,12 +142,12 @@ def main():
         if len(args.command) != 1 and len(args.command) != 2:
             man(command)
             raise ghostpass.GhostpassException("{} command requires at most one field argument".format(command))
-    
+
     # Required field - ./ghostpass COMMAND <field>
     elif command in consts.REQUIRED_FIELD and len(args.command) != 2:
         man(command)
         raise ghostpass.GhostpassException("{} command requires one field argument".format(command))
-    
+
     # Two required fields - ./ghostpass COMMAND <field1> <field2>
     elif command in consts.REQUIRED_TWO_FIELD and len(args.command) != 3:
         man(command)
@@ -186,7 +178,7 @@ def main():
 
     # Print help for specified argument
     if command == "help":
-        
+
         # Print help for specific command (if passed)
         if len(args.command) == 2:
             man(args.command[1])
@@ -195,13 +187,13 @@ def main():
 
     elif command == "init":
         logging.debug("Instantiating ghostpass object")
- 
+
         # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
         gp = ghostpass.Ghostpass()
 
         # grabbing user input for master password and corpus path
         print(col.P + "Instantiating Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W)
-        masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+        masterpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         corpus_path = raw_input("> Enter DOCUMENT KEY path: ")
 
         # initializing state with password
@@ -222,7 +214,7 @@ def main():
         print(col.G + "\n" + _gp.uuid + "is currently open." + col.W)
 
     elif command == "open":
-        
+
         # checking to see if a session is already open
         logging.debug("Checking if context file exists")
         if os.path.isfile(consts.PICKLE_CONTEXT):
@@ -251,8 +243,8 @@ def main():
         try:
             jsonstring = open(context_session).read()
         except IOError:
-            raise ghostpass.GhostpassException("{} is not a valid session.".format(context_session)) 
- 
+            raise ghostpass.GhostpassException("{} is not a valid session.".format(context_session))
+
         _gp = jsonpickle.decode(jsonstring)
 
         logging.debug(_gp) # __repr__ to validify open successful
@@ -260,8 +252,8 @@ def main():
         # password authentication
         logging.debug("Performing password authentication")
         print(col.P + "Opening session: " + _gp.uuid + col.W)
-        contextpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        
+        contextpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+
         if hashlib.sha512(contextpassword).digest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
 
@@ -282,7 +274,7 @@ def main():
 
     elif command == "close":
         logging.debug("Checking to see if context exists, and deleting")
-        
+
         try:
             os.remove(consts.PICKLE_CONTEXT)
         except OSError: # uses exception handler in case file wasn't available in first place
@@ -292,11 +284,11 @@ def main():
 
 
     elif command == "add":
-        print col.P + "Adding field: " + args.command[1] + col.W + "\n"
+        print(col.P + "Adding field: " + args.command[1] + col.W + "\n")
 
         # retrieve secret for specific field
         username = raw_input("> Enter USERNAME for the field: ")
-        secret = getpass("> Enter PASSWORD for field (will NOT be echoed): ")
+        secret = getpass.getpass("> Enter PASSWORD for field (will NOT be echoed): ")
 
         # securely append field and secret to session context
         if _gp.add_field(args.command[1], username, secret) == 0:
@@ -323,7 +315,7 @@ def main():
 
     elif command == "view":
         logging.debug("Outputting unencrypted field as a pretty-table")
-        print "\n", _gp.view_field(args.command[1]), "\n"
+        print("\n", _gp.view_field(args.command[1]), "\n")
 
 
     elif command == "stash":
@@ -357,14 +349,14 @@ def main():
     elif command == "encrypt":
 
         # ensure that our changes have been committed back to the original session file
-        logging.debug("Checking if changes were stashed")     
+        logging.debug("Checking if changes were stashed")
         if _gp.encrypted == False:
-            print col.O + "Changes have NOT been stashed. Stashing changes automatically." + col.W
+            print(col.O + "Changes have NOT been stashed. Stashing changes automatically." + col.W)
             _gp.stash_changes()
 
         # export encrypted file of our secrets
         encrypt_out = _gp.encode_files()
-        
+
         # retrieve time and date, append to text
         with open(consts.NOW_TIME + "-encrypted.txt", "wb") as output:
             output.write(encrypt_out)
@@ -382,7 +374,7 @@ def main():
 
         # create an isolated temporary object for decrypt functionality
         decrypt_gp = ghostpass.Ghostpass()
-        masterpassword = getpass("> Enter MASTER PASSWORD (will not be echoed): ")
+        masterpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         decrypt_gp.init_state(masterpassword)
         del masterpassword
 
@@ -419,7 +411,7 @@ def main():
         yn = raw_input("\n> Are you sure you want to delete this session? (y / n) ")
         if yn == "y" or yn == "yes":
             os.remove(consts.DEFAULT_CONFIG_PATH + "/" + args.command[1])
-            print "\n" + col.G + "Succesfully deleted session " + args.command[1] + "!" + col.W
+            print("\n" + col.G + "Succesfully deleted session " + args.command[1] + "!" + col.W)
 
     return 0
 
@@ -429,5 +421,5 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print col.O + "\n[*] Abrupt exit detected. Shutting down." + col.W
+        print(col.O + "\n[*] Abrupt exit detected. Shutting down." + col.W)
         exit(1)
