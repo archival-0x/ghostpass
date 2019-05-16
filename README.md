@@ -6,8 +6,6 @@ Ghostpass is a dead simple password management protocol that enables users to di
 
 ## intro
 
-Ghostpass is a password management protocol that is designed with the purpose of transmitting secrets through the open web, while being able to maintain security and integrity.
-
 There's quite a bit of password managers that are out there today, so why even bother with Ghostpass? In order to answer this question, let's take a look at several different password managers "models" that already exist, and the problems that plague them:
 
 * __Web-based password managers__ are centralized, and data breeches because of undiscovered vulnerability results in catastrophic events.

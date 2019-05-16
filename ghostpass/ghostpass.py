@@ -15,8 +15,10 @@ import hashlib
 import threading
 import tabulate
 
-import ghostpass.crypto as crypto
-from ghostpass.consts import Color as color
+from . import crypto
+from . import consts
+from .consts import Color as color
+
 
 # Define a custom exception
 class GhostpassException(Exception):

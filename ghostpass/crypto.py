@@ -12,8 +12,8 @@ import binascii
 from Crypto import Random
 from Crypto.Cipher import AES
 
-import ghostpass.utils as utils
-import ghostpass.consts as consts
+from . import utils
+from . import consts
 
 
 class MarkovHelper:

@@ -3,8 +3,7 @@
         Helper functions, mostly for text manipulation
 """
 import re
-import ghostpass.consts as consts
-
+from . import consts
 
 def _word_lower(word):
     """

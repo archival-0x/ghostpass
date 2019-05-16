@@ -27,8 +27,9 @@ import pickle
 import jsonpickle
 import getpass
 
-import ghostpass.ghostpass as ghostpass
-from ghostpass.consts import Color as col
+from . import ghostpass
+from . import consts
+from .consts import Color as col
 
 
 def man(argument):
