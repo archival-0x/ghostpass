@@ -43,8 +43,7 @@ NO_FIELD = [
     "list",
     "secrets",
     "close",
-    "encrypt",
-    "help"
+    "encrypt"
 ]
 
 # commands that require one input field

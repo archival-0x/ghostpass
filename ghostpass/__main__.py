@@ -87,50 +87,32 @@ def check_arg(argument):
 
 
 def main():
-    """
-    <Purpose>
-      This is the main entry point to the Ghostpass command line
-      application. It initializes an argument parser, performs
-      preemptive checking, and then calls upon necessary modules
-      in order to work with the protocol
-
-    <Returns>
-      0 for success
-      GhostpassException for errors
-
-    """
-
-    # Initialize parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbosity', dest='verbosity', type=int, help='output based on verbosity level')
     parser.add_argument('command', nargs='+', help="Execute a specific command")
 
-    args =  parser.parse_args()
+    args = parser.parse_args()
 
-    # Configure logging based on verbosity
+    # configure logging based on verbosity
     if args.verbosity == 2:
         log_level = logging.DEBUG
 
-    # Check to see if config path exists, and if not, create it
+    # use try/except to prevent race condition in creating config path
     logging.debug("Checking if config path exists")
     if not os.path.exists(consts.DEFAULT_CONFIG_PATH):
-        # prevent race condition, as specified in
-        # https://stackoverflow.com/questions/273192/how-can-i-create-a-directory-if-it-does-not-exist
         try:
             os.makedirs(consts.DEFAULT_CONFIG_PATH)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
 
-    # Set command as first argument provided
-    command = args.command[0]
-
-    # Check if specified command is valid
+    # check if specified command is valid
     logging.debug("Checking if provided argument is correct")
+    command = args.command[0]
     if check_arg(command) != 0:
         raise ghostpass.GhostpassException("invalid command")
 
-    # Preemptive argument checking
+    # preemptive argument checking
     logging.debug("Checking if specific commands satisfy with args specification")
 
     # No fields - ./ghostpass COMMAND
@@ -155,7 +137,7 @@ def main():
         raise ghostpass.GhostpassException("{} command requires two field arguments".format(command))
 
     # grab a list of all sessions within config path
-    # TODO: robustness by checking validity of session file, to ensure no invalid/malicious JSON files are present
+    # TODO: robustness by checking validity of session file, to ensure no invalid JSON files are present
     sessions = [os.path.splitext(f)[0]
         for f in os.listdir(consts.DEFAULT_CONFIG_PATH)
         if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
@@ -164,23 +146,21 @@ def main():
     # preemptive context file checking and opening - complete this for specific commands that require context file
     logging.debug("Checking if context file exists")
     if command in consts.REQUIRED_CONTEXT:
+
         # check if context file exists before adding
         if not os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("no session has been opened")
 
         # load object from pickle
         logging.debug("Loading object from pickle")
-        context = open(consts.PICKLE_CONTEXT, 'r')
-        _gp = pickle.load(context)
-        context.close()
+        with open(consts.PICKLE_CONTEXT, 'r') as context:
+            _gp = pickle.load(context)
 
 
     logging.debug("Performing actual argument checking")
-
-    # Print help for specified argument
     if command == "help":
 
-        # Print help for specific command (if passed)
+        # print help for specific command (if passed)
         if len(args.command) == 2:
             man(args.command[1])
         else:
@@ -189,13 +169,13 @@ def main():
     elif command == "init":
         logging.debug("Instantiating ghostpass object")
 
-        # Instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
+        # instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
         gp = ghostpass.Ghostpass()
 
         # grabbing user input for master password and corpus path
         print(col.P + "Instantiating Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W)
         masterpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        corpus_path = raw_input("> Enter DOCUMENT KEY path: ")
+        corpus_path = input("> Enter DOCUMENT KEY path: ")
 
         # initializing state with password
         logging.debug("Initializing ghostpass object state")
@@ -245,16 +225,12 @@ def main():
             jsonstring = open(context_session).read()
         except IOError:
             raise ghostpass.GhostpassException("{} is not a valid session.".format(context_session))
-
         _gp = jsonpickle.decode(jsonstring)
-
-        logging.debug(_gp) # __repr__ to validify open successful
+        logging.debug(_gp)
 
         # password authentication
-        logging.debug("Performing password authentication")
         print(col.P + "Opening session: " + _gp.uuid + col.W)
         contextpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-
         if hashlib.sha512(contextpassword).digest() != _gp.password:
             raise ghostpass.GhostpassException("incorrect master password for session: {}".format(_gp.uuid))
 
@@ -262,12 +238,10 @@ def main():
         logging.debug("Creating and writing context.pickle file")
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
 
-            # decrypt fields if any fields have been written
+            # decrypt and write
             if len(_gp.data) != 0:
                 logging.debug("Decrypting fields in data")
                 _gp.decrypt_fields()
-
-            # write object to context file
             pickle.dump(_gp, context)
 
         print(col.G + "Session {} successfully opened!".format(_gp.uuid) + col.W)
@@ -275,7 +249,6 @@ def main():
 
     elif command == "close":
         logging.debug("Checking to see if context exists, and deleting")
-
         try:
             os.remove(consts.PICKLE_CONTEXT)
         except OSError: # uses exception handler in case file wasn't available in first place
@@ -288,7 +261,7 @@ def main():
         print(col.P + "Adding field: " + args.command[1] + col.W + "\n")
 
         # retrieve secret for specific field
-        username = raw_input("> Enter USERNAME for the field: ")
+        username = input("> Enter USERNAME for the field: ")
         secret = getpass.getpass("> Enter PASSWORD for field (will NOT be echoed): ")
 
         # securely append field and secret to session context
@@ -357,23 +330,19 @@ def main():
 
         # export encrypted file of our secrets
         encrypt_out = _gp.encode_files()
-
-        # retrieve time and date, append to text
         with open(consts.NOW_TIME + "-encrypted.txt", "wb") as output:
             output.write(encrypt_out)
 
 
     elif command == "decrypt":
 
-        # perform file-checking
         logging.debug("Checking if specified files exist")
         if not os.path.isfile(args.command[1]) and os.path.isfile(args.command[2]):
             raise ghostpass.GhostpassException("file(s) specified do not exist")
 
         # since decrypt does not manipulate sessions, no context-checking is necessary
-        logging.debug("Performing decryption")
-
         # create an isolated temporary object for decrypt functionality
+        logging.debug("Performing decryption")
         decrypt_gp = ghostpass.Ghostpass()
         masterpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         decrypt_gp.init_state(masterpassword)
@@ -387,11 +356,9 @@ def main():
 
         # decrypt the file, and export and output
         decrypt_out = decrypt_gp.decode_file(args.command[1], args.command[2])
-
-        # retrieve time and date, append to text
         with open(consts.NOW_TIME + "-decrypted.txt", "wb") as output:
             output.write(decrypt_out)
-        return 0
+
 
     elif command == "destruct":
 
@@ -409,7 +376,7 @@ def main():
                     raise ghostpass.GhostpassException("session is currently open. Please close before destructing")
 
         # explicitly get user permission, and delete the session
-        yn = raw_input("\n> Are you sure you want to delete this session? (y / n) ")
+        yn = input("\n> Are you sure you want to delete this session? (y / n) ")
         if yn == "y" or yn == "yes":
             os.remove(consts.DEFAULT_CONFIG_PATH + "/" + args.command[1])
             print("\n" + col.G + "Succesfully deleted session " + args.command[1] + "!" + col.W)
