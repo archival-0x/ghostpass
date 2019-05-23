@@ -73,13 +73,12 @@ class MarkovHelper:
             expanded_array.append(lut_val >> 8)
             expanded_array.append(lut_val)
 
-
         # generate our final document key
-        self.corpus = []
-        for i, value in enumerate(self.initial_corpus):
-            for dec in expanded_array:
-                if i == dec:
-                    self.corpus.append(self.initial_corpus[dec])
+        self.corpus = [self.initial_corpus[dec]
+            for i, _ in enumerate(self.initial_corpus)
+            for dec in expanded_array
+            if i == dec
+        ]
 
         # convert corpus into a string
         self.corpus = "".join(self.corpus)
@@ -88,14 +87,13 @@ class MarkovHelper:
 
 
     def init_mc(self):
-        '''
+        """
         initialize a Markov-chained model for generating plaintext-like
         ciphertext. This is used for both encryption AND decryption.
-        '''
+        """
 
         # break specified corpus into lines using regex
-        lines = [re.findall(r"\w[\w']*", line) for line
-                 in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
+        lines = [re.findall(r"\w[\w']*", line) for line in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
 
         # append the MARKOV_START symbol for lines with longer than 4 words
         for line in lines:
@@ -136,10 +134,11 @@ class MarkovHelper:
         del self.corpus
 
 
+    # TODO: implement
     def encrypt_text(self, cleartext):
         return 0
 
-
+    # TODO: implement
     def decrypt_text(self, ciphertext):
         return 0
 
@@ -162,6 +161,15 @@ class AESHelper:
         self.key = key          # key has already been converted into SHA512 hash in ghostpass object
 
 
+    def _pad(self, s):
+        return s + (self.blocksize - len(s) % self.blocksize) * chr(self.blocksize - len(s) % self.blocksize)
+
+
+    @staticmethod
+    def _unpad(s):
+        return s[:-ord(s[len(s)-1:])]
+
+
     def encrypt(self, raw):
         """
         encrypt raw text into an encrypted AES ciphertext
@@ -180,12 +188,3 @@ class AESHelper:
         iv = enc[:AES.block_size]
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
         return self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
-
-
-    def _pad(self, s):
-        return s + (self.blocksize - len(s) % self.blocksize) * chr(self.blocksize - len(s) % self.blocksize)
-
-
-    @staticmethod
-    def _unpad(s):
-        return s[:-ord(s[len(s)-1:])]
