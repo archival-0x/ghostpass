@@ -18,16 +18,15 @@ from . import consts
 
 class MarkovHelper:
     """
-    <Purpose>
-      The MarkovHelper class provides an interface to several methods that enable for the creation of a
-      Markov chain model, and enable encryption / decryption through the specified corpus. These methods
-      were largely based off of Dr. H. Moraldo's Markov textual steganography research, specified here:
-      https://github.com/hmoraldo/markovTextStego
+    The MarkovHelper class provides an interface to several methods that enable for the creation of a
+    Markov chain model, and enable encryption / decryption through the specified corpus. These methods
+    were largely based off of Dr. H. Moraldo's Markov textual steganography research, specified here:
+    https://github.com/hmoraldo/markovTextStego
     """
 
     def __init__(self, initial_corpus):
-        self.initial_corpus = initial_corpus  # stores list of words from initial corpus
-        self.bigrams = []                     # stores bigram tuples for Markov Chain
+        self.initial_corpus = initial_corpus
+        self.bigrams = []
 
 
     def _compute_probabilities(self, words):
@@ -43,47 +42,6 @@ class MarkovHelper:
         count = utils._count_repeats(words)
         total = sum([c[1] for c in count])
         return [(c[0], (c[1], total)) for c in count]
-
-
-
-    def generate_key(self, hashpwd):
-        """
-        <Purpose>
-          This method takes an initial document key, and a SHA512 hash, and performs
-          the first round key-derivation function that produces a final document key.
-          Our hash is converted into a binary bit array (8-bits per bitstring), and
-          bit expansion with a factor of 3 is applied. The final expanded bit array
-          is converted to decimal, and used to determine positions in the initial wordlist.
-          A final wordlist of all those positions are set as the final document key.
-
-        <Returns>
-          None
-
-        """
-
-        # hashstring into a decimal list
-        raw_str = binascii.unhexlify(hashpwd)
-        dec_array = [ord(x) for x in raw_str]
-
-        # expand our list using an expansion factor of 3
-        expanded_array = []
-        for dec in dec_array:
-            lut_val = consts.EXPANSION_TABLE[dec]
-            expanded_array.append(lut_val >> 16)
-            expanded_array.append(lut_val >> 8)
-            expanded_array.append(lut_val)
-
-        # generate our final document key
-        self.corpus = [self.initial_corpus[dec]
-            for i, _ in enumerate(self.initial_corpus)
-            for dec in expanded_array
-            if i == dec
-        ]
-
-        # convert corpus into a string
-        self.corpus = "".join(self.corpus)
-        del self.initial_corpus
-
 
 
     def init_mc(self):
@@ -138,6 +96,7 @@ class MarkovHelper:
     def encrypt_text(self, cleartext):
         return 0
 
+
     # TODO: implement
     def decrypt_text(self, ciphertext):
         return 0
@@ -148,12 +107,11 @@ class MarkovHelper:
 
 class AESHelper:
     """
-    <Purpose>
-      AESHelper is a class that provides an interface for AES-CBC
-      encryption and decryption. While the Ghostpass protocol does not
-      require the use of AES, we utilize it in this reference implementation
-      to show the plugability of other cryptographic protocols. AES in this
-      context is used to encrypt fields.
+    AESHelper is a class that provides an interface for AES-CBC
+    encryption and decryption. While the Ghostpass protocol does not
+    require the use of AES, we utilize it in this reference implementation
+    to show the plugability of other cryptographic protocols. AES in this
+    context is used to encrypt fields.
     """
 
     def __init__(self, key):

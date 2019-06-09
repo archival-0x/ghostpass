@@ -41,7 +41,6 @@ def man(argument):
 
     <Returns>
       None
-
     """
 
     # Print header if no arg is provided
@@ -69,9 +68,7 @@ def check_arg(argument):
       Argument-checking method that ensures that the specified command could be found
 
     <Returns>
-      0 for success
-      1 for failure
-
+      bool value
     """
     if not argument in consts.COMMANDS.keys():
         print("Command '" + str(argument) + "' not found! Please specify one of these:\n")
@@ -137,7 +134,6 @@ def main():
         raise ghostpass.GhostpassException("{} command requires two field arguments".format(command))
 
     # grab a list of all sessions within config path
-    # TODO: robustness by checking validity of session file, to ensure no invalid JSON files are present
     sessions = [os.path.splitext(f)[0]
         for f in os.listdir(consts.DEFAULT_CONFIG_PATH)
         if os.path.isfile(os.path.join(consts.DEFAULT_CONFIG_PATH, f))
@@ -146,12 +142,9 @@ def main():
     # preemptive context file checking and opening - complete this for specific commands that require context file
     logging.debug("Checking if context file exists")
     if command in consts.REQUIRED_CONTEXT:
-
-        # check if context file exists before adding
         if not os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("no session has been opened")
 
-        # load object from pickle
         logging.debug("Loading object from pickle")
         with open(consts.PICKLE_CONTEXT, 'r') as context:
             _gp = pickle.load(context)
@@ -159,17 +152,14 @@ def main():
 
     logging.debug("Performing actual argument checking")
     if command == "help":
-
-        # print help for specific command (if passed)
         if len(args.command) == 2:
             man(args.command[1])
         else:
             man(None)
 
+
     elif command == "init":
         logging.debug("Instantiating ghostpass object")
-
-        # instantiate ghostpass object with new pseudorandom uuid, retrieve password and corpus path
         gp = ghostpass.Ghostpass()
 
         # grabbing user input for master password and corpus path
@@ -187,16 +177,14 @@ def main():
         # export ghostpass object to encrypted JSON file
         logging.debug("Exporting ghostpass to JSON")
         gp.export()
-
         print(col.G + "\nCreated new session! Remember your password, and use `ghostpass open <SESSION>` to open it!" + col.W)
 
 
     elif command == "whoami":
         print(col.G + "\n" + _gp.uuid + "is currently open." + col.W)
 
-    elif command == "open":
 
-        # checking to see if a session is already open
+    elif command == "open":
         logging.debug("Checking if context file exists")
         if os.path.isfile(consts.PICKLE_CONTEXT):
             raise ghostpass.GhostpassException("session already open. Close before opening another one.")
@@ -204,8 +192,6 @@ def main():
         # if only command provided, perform checking to see if only one session exists
         logging.debug("Checking to see if only one session exists")
         if len(args.command) == 1:
-
-            # if multiple sessions exist, print man, and throw exception
             print(col.O + "No session name specified, checking if only one (default) session exists..." + col.W)
             if len(sessions) > 1:
                 man("open")
@@ -237,8 +223,6 @@ def main():
         # dump into pickle file
         logging.debug("Creating and writing context.pickle file")
         with open(consts.PICKLE_CONTEXT, 'wb') as context:
-
-            # decrypt and write
             if len(_gp.data) != 0:
                 logging.debug("Decrypting fields in data")
                 _gp.decrypt_fields()
@@ -251,9 +235,9 @@ def main():
         logging.debug("Checking to see if context exists, and deleting")
         try:
             os.remove(consts.PICKLE_CONTEXT)
-        except OSError: # uses exception handler in case file wasn't available in first place
-            print(col.O + "No session opened, so none closed" + col.W)
-            return
+        except OSError:
+            raise ghostpass.GhostpassException("no session opened, so none closed")
+
         print(col.G + "Session closed!" + col.W)
 
 
@@ -271,14 +255,11 @@ def main():
         else:
             raise ghostpass.GhostpassException("unable to add field: {}".format(args.command[1]))
 
-        # ensure cleartext secret is NOT cached
         del secret
 
 
     elif command == "remove":
         logging.debug("Removing field " + args.command[1])
-
-        # securely remove field and secret from session context
         if _gp.remove_field(args.command[1]) == 0:
             print(col.G + "Success! Removed {}".format(args.command[1]) + col.W)
             with open(consts.PICKLE_CONTEXT, 'wb') as context:
@@ -309,7 +290,6 @@ def main():
 
     elif command == "list":
         logging.debug("Listing all available sessions")
-
         if len(sessions) == 0:
             print(col.O + "No sessions available! Use `ghostpass init` to create a new one!" + col.W)
             return 0
@@ -321,8 +301,6 @@ def main():
 
 
     elif command == "encrypt":
-
-        # ensure that our changes have been committed back to the original session file
         logging.debug("Checking if changes were stashed")
         if _gp.encrypted == False:
             print(col.O + "Changes have NOT been stashed. Stashing changes automatically." + col.W)
@@ -335,7 +313,6 @@ def main():
 
 
     elif command == "decrypt":
-
         logging.debug("Checking if specified files exist")
         if not os.path.isfile(args.command[1]) and os.path.isfile(args.command[2]):
             raise ghostpass.GhostpassException("file(s) specified do not exist")
@@ -361,8 +338,6 @@ def main():
 
 
     elif command == "destruct":
-
-        # check if session exists
         logging.debug("Checking to see if specified session exists")
         if not os.path.isfile(consts.DEFAULT_CONFIG_PATH + "/" + args.command[1]):
             raise ghostpass.GhostpassException("session does not exist.")
@@ -387,7 +362,7 @@ def main():
 
 if __name__ == '__main__':
     try:
-        main()
+        exit(main())
     except KeyboardInterrupt:
         print(col.O + "\n[*] Abrupt exit detected. Shutting down." + col.W)
         exit(1)
