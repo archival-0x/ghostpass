@@ -8,7 +8,7 @@
 """
 
 import os
-import time 
+import time
 
 NAME = "ghostpass"
 VERSION = "0.0.1"
@@ -18,7 +18,7 @@ NOW_DATE = time.strftime("%Y-%m-%d-%H:%M:%S", time.gmtime())
 # filepath configuration constants
 DEFAULT_CONFIG_PATH = os.path.dirname(os.path.expanduser("~") + "/.config/ghostpass/")
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-PICKLE_CONTEXT = ROOT_DIR + "/" + 'context.pickle'
+PICKLE_CONTEXT = ROOT_DIR + "/" + 'session'
 
 # markov cipher constants
 MARKOV_START = "<MARKOV_START>"

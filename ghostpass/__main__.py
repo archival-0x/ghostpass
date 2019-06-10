@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
 """
-<Program Name>
-  ghostpass
+__main__.py
 
-<Author>
-  Alan Cao <ex0dus@codemuch.tech>
-
-<Started>
-  May 2018
-
-<Purpose>
-  This is the entry file for Ghostpass console interactions. This file
+  main entry file for Ghostpass console interactions. This file
   comprises of the main method that enables the user to initialize a
   session and perform all operations needed to interact with that session.
   Several helper methods are also provided, specifically for working together
@@ -34,22 +26,16 @@ from .consts import Color as col
 
 def man(argument):
     """
-    <Purpose>
-      Helper manpages-style method for displaying information on positional
-      arguments and any details. It provides a much more verbose output
-      for interfacing with the command-line application
-
-    <Returns>
-      None
+    helper for displaying information on positional
+    arguments and any details. It provides a much more verbose output
+    for interfacing with the command-line application
     """
-
-    # Print header if no arg is provided
     if argument is None or argument == "all":
         print("------------------\nAvailable Commands\n------------------\n")
     else:
         check_arg(argument)
 
-    # Iterate over commands and check to see if any match argument, if provided
+    # iterate over commands and check to see if any match argument, if provided
     for k, v in consts.COMMANDS.items():
         if k == argument:
             print("-----------")
@@ -64,11 +50,7 @@ def man(argument):
 
 def check_arg(argument):
     """
-    <Purpose>
-      Argument-checking method that ensures that the specified command could be found
-
-    <Returns>
-      bool value
+    Argument-checking method that ensures that the specified command could be found.
     """
     if not argument in consts.COMMANDS.keys():
         print("Command '" + str(argument) + "' not found! Please specify one of these:\n")

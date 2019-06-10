@@ -1,6 +1,10 @@
 """
-    crypto.py
-        Interface for crytographic operations, including AES and our custom Markov-chained cipher
+crypto.py
+
+  Module for ghostpass for relevant cryptographic operations. This includes
+  an object for generating a Markov chain based on a defined corpus, and an
+  AES object for encrypting and decrypting given input and a hash.
+
 """
 import re
 import hashlib
@@ -24,20 +28,15 @@ class MarkovHelper:
     https://github.com/hmoraldo/markovTextStego
     """
 
-    def __init__(self, initial_corpus):
-        self.initial_corpus = initial_corpus
+    def __init__(self, corpus):
+        self.corpus = corpus
         self.bigrams = []
 
 
     def _compute_probabilities(self, words):
         """
-        <Purpose>
-          This method is core for the Markov chain generation process, as it first computes the number
-          of repeats within a corpus, and calculating the probability of the next work showing up.
-
-        <Returns>
-          List of words
-
+        computes the number of repeats within a corpus, and calculates
+        probability of the next word showing up.
         """
         count = utils._count_repeats(words)
         total = sum([c[1] for c in count])
@@ -51,12 +50,12 @@ class MarkovHelper:
         """
 
         # break specified corpus into lines using regex
-        lines = [re.findall(r"\w[\w']*", line) for line in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
+        lines = [line.rstrip('\n') for line in self.corpus]
 
         # append the MARKOV_START symbol for lines with longer than 4 words
-        for line in lines:
+        for i, line in enumerate(lines):
             if len(line) >= consts.MIN_LINE_LEN:
-                lines = [[consts.MARKOV_START] + line + [consts.MARKOV_START]]
+                lines[i] = [consts.MARKOV_START + line + consts.MARKOV_START]
 
         # generate our bigrams in the style of a list
         bigrams1 = [[(line[word], line[word + 1], line[word + 2]) for word in range(len(line) - 2)] for line in lines]
@@ -115,8 +114,8 @@ class AESHelper:
     """
 
     def __init__(self, key):
-        self.blocksize = 64     # represents 32 byte-sized key
-        self.key = key          # key has already been converted into SHA512 hash in ghostpass object
+        self.blocksize = 64
+        self.key = key
 
 
     def _pad(self, s):

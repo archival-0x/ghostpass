@@ -17,8 +17,6 @@ state.
 
 Ghostpass is __NOT__ a singular password manager, but rather a protocol that can be employed through various languages and technologies. For more information about the designof the cryptographic protocol and an evaluation of its security, refer to the whitepaper (TODO).
 
-For a simplified introduction, we see the protocol as a __two-round encryption process__ that includes a key-derivation function (KDF) and a textual steganography process.
-
 ## install
 
 With `pip` (TODO):

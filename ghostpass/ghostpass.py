@@ -46,14 +46,14 @@ class Ghostpass(object):
         return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
 
-    def init_state(self, password, corpus):
+    def init_state(self, password, corpus_file):
         """
         initializes the new session, immediately hashing the master password such
         that runtime doesn't expose cleartext
         """
         if password == "" or password == None:
             raise GhostpassException("master password is not optional")
-        if corpus == "" or corpus == None:
+        if corpus_file == "" or corpus_file == None:
             raise GhostpassException("corpus path is not optional")
 
         # store hash and initialize crypto helper
@@ -61,8 +61,8 @@ class Ghostpass(object):
         self.aeshelp = crypto.AESHelper(self.password)
 
         # open and store initial document key as list
-        with open(corpus, 'r') as corpus_file:
-            initial_doc = corpus_file.readlines()
+        with open(corpus_file, 'r') as fd:
+            corpus = fd.readlines()
 
         # initialize Markov object with corpus
         self.model = crypto.MarkovHelper(corpus)
