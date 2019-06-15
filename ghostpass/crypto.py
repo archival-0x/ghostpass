@@ -55,12 +55,15 @@ class MarkovHelper:
         # append the MARKOV_START symbol for lines with longer than 4 words
         for i, line in enumerate(lines):
             if len(line) >= consts.MIN_LINE_LEN:
-                lines[i] = [consts.MARKOV_START + line + consts.MARKOV_START]
+                lines[i] = consts.MARKOV_START + ' ' + line + ' ' + consts.MARKOV_START
 
         # generate our bigrams in the style of a list
-        bigrams1 = [[(line[word], line[word + 1], line[word + 2]) for word in range(len(line) - 2)] for line in lines]
-        bigrams2 = [[(line[0], line[0], line[1])] for line in lines]
-        bigrams = bigrams1 + bigrams2
+        def make_pairs(corpus):
+            for line in corpus:
+                for i in range(len(line) - 1):
+                    yield (corpus[i], corpus[i+1])
+
+        bigrams = make_pairs(lines)
 
         bigramsDict = {}
         for line in bigrams:

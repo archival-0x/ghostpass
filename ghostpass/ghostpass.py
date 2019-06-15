@@ -7,9 +7,9 @@ ghostpass.py
 
 """
 import random
+import uuid
 import json
 import jsonpickle
-import names
 import hashlib
 import threading
 import tabulate
@@ -32,11 +32,8 @@ global_mutex = threading.Lock()
 
 class Ghostpass(object):
 
-    # represents global pseudorandom identifying ID for session
-    uuid = names.get_first_name() + names.get_first_name() + str(random.randrange(0, 100))
-
     def __init__(self):
-        self.uuid = self.uuid
+        self.uuid = str(uuid.uuid4())
         self.password = None
         self.encrypted = False
         self.data = []

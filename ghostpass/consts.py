@@ -16,7 +16,7 @@ VERSION = "0.0.1"
 NOW_DATE = time.strftime("%Y-%m-%d-%H:%M:%S", time.gmtime())
 
 # filepath configuration constants
-DEFAULT_CONFIG_PATH = os.path.dirname(os.path.expanduser("~") + "/.config/ghostpass/")
+DEFAULT_CONFIG_PATH = os.path.dirname(os.path.expanduser("~") + "/" + NAME)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PICKLE_CONTEXT = ROOT_DIR + "/" + 'session'
 
