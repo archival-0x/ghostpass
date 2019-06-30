@@ -6,7 +6,7 @@
 
 example_corpus.txt
 
-env/
+venv/
 build/
 *.egg-info/
 dist/

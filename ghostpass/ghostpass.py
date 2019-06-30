@@ -32,18 +32,7 @@ global_mutex = threading.Lock()
 
 class Ghostpass(object):
 
-    def __init__(self):
-        self.uuid = str(uuid.uuid4())
-        self.password = None
-        self.encrypted = False
-        self.data = []
-
-
-    def __repr__(self):
-        return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
-
-
-    def init_state(self, password, corpus_file):
+    def __init__(self, password, corpus_file):
         """
         initializes the new session, immediately hashing the master password such
         that runtime doesn't expose cleartext
@@ -53,20 +42,29 @@ class Ghostpass(object):
         if corpus_file == "" or corpus_file == None:
             raise GhostpassException("corpus path is not optional")
 
+
         # store hash and initialize crypto helper
         self.password = hashlib.sha512(password.encode('utf-8')).hexdigest()
         self.aeshelp = crypto.AESHelper(self.password)
+        self.encrypted = False
 
-        # open and store initial document key as list
+        # open and store document key as string
         with open(corpus_file, 'r') as fd:
-            corpus = fd.readlines()
+            corpus = "".join(fd.readlines())
 
         # initialize Markov object with corpus
         self.model = crypto.MarkovHelper(corpus)
         self.model.init_mc()
 
+        self.uuid = str(uuid.uuid4())
+        self.data = []
+
         # since cleartext password is copied to object, make sure to delete
         del password
+
+
+    def __repr__(self):
+        return "Ghostpass - {}: {}".format(self.uuid, json.dumps(self.__dict__))
 
 
     def export(self):

@@ -85,9 +85,10 @@ def main():
             if e.errno != errno.EEXIST:
                 raise
 
+    command = args.command[0]
+
     # check if specified command is valid
     logging.debug("Checking if provided argument is correct")
-    command = args.command[0]
     if check_arg(command) != 0:
         raise ghostpass.GhostpassException("invalid command")
 
@@ -141,19 +142,15 @@ def main():
 
 
     elif command == "init":
-        logging.debug("Instantiating ghostpass object")
-        gp = ghostpass.Ghostpass()
 
         # grabbing user input for master password and corpus path
-        print(col.P + "Instantiating Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W)
         masterpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
         corpus_path = input("> Enter DOCUMENT KEY path: ")
 
         # initializing state with password
-        logging.debug("Initializing ghostpass object state")
-        gp.init_state(masterpassword, corpus_path)
+        gp = ghostpass.Ghostpass(masterpassword, corpus_path)
+        print(col.P + "Initialized Ghostpass instance: " + col.C + gp.uuid + "\n" + col.W)
 
-        # destroy cleartext password so is not cached
         del masterpassword
 
         # export ghostpass object to encrypted JSON file
@@ -302,16 +299,9 @@ def main():
         # since decrypt does not manipulate sessions, no context-checking is necessary
         # create an isolated temporary object for decrypt functionality
         logging.debug("Performing decryption")
-        decrypt_gp = ghostpass.Ghostpass()
         masterpassword = getpass.getpass("> Enter MASTER PASSWORD (will not be echoed): ")
-        decrypt_gp.init_state(masterpassword)
+        decrypt_gp = ghostpass.Ghostpass(masterpassword, args.command[1])
         del masterpassword
-
-        # load corpus file into object
-        logging.debug("Loading corpus")
-        with open(args.command[1], 'r') as cf:
-            corpus = cf.readlines()
-        decrypt_gp.load_corpus(corpus)
 
         # decrypt the file, and export and output
         decrypt_out = decrypt_gp.decode_file(args.command[1], args.command[2])
