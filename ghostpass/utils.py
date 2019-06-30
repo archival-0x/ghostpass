@@ -5,7 +5,7 @@
 import re
 from . import consts
 
-def _word_lower(word):
+def word_lower(word):
     """
     lowers a word if not the MARKOV_START symbol
     """
@@ -15,7 +15,7 @@ def _word_lower(word):
         return word
 
 
-def _make_lower(word):
+def make_lower(word):
     """
     lowers all the words within a list or tuple except for
     the MARKOV_START token
@@ -27,7 +27,7 @@ def _make_lower(word):
     return _word_lower(word)
 
 
-def _count_repeats(words):
+def count_repeats(words):
     """
     given a list of words, count how many times each one is listed
     """
@@ -41,7 +41,7 @@ def _count_repeats(words):
     return count.values()
 
 
-def _to_tuple(t):
+def to_tuple(t):
     """
     helper - given a variable, determine type and return as tuple
     """

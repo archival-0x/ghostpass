@@ -38,7 +38,7 @@ class MarkovHelper:
         computes the number of repeats within a corpus, and calculates
         probability of the next word showing up.
         """
-        count = utils._count_repeats(words)
+        count = utils.count_repeats(words)
         total = sum([c[1] for c in count])
         return [(c[0], (c[1], total)) for c in count]
 
@@ -50,48 +50,34 @@ class MarkovHelper:
         """
 
         # break specified corpus into lines using regex
-        lines = [line.rstrip('\n') for line in self.corpus]
+        lines = [re.findall(r"\w[\w']*", line) for line
+                in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
+        lines = [[consts.MARKOV_START] + line + [consts.MARKOV_START] for line
+                in lines if len(line) >= consts.MIN_LINE_LEN]
 
-        # append the MARKOV_START symbol for lines with longer than 4 words
-        for i, line in enumerate(lines):
-            if len(line) >= consts.MIN_LINE_LEN:
-                lines[i] = consts.MARKOV_START + ' ' + line + ' ' + consts.MARKOV_START
+        # initialize bigrams from words in lines
+        bigrams = [[(line[word], line[word + 1]) for word in range(len(line) - 1)] for line in lines]
 
-        # generate our bigrams in the style of a list
-        def make_pairs(corpus):
-            for line in corpus:
-                for i in range(len(line) - 1):
-                    yield (corpus[i], corpus[i+1])
+        bigrams_dict = {}
 
-        bigrams = make_pairs(lines)
-
-        bigramsDict = {}
         for line in bigrams:
             for bigram in line:
+                
+                word = utils.word_lower(bigram[0])
 
-                # where the first element is the input state, with two works (hence BIgram)
-                word1 = (bigram[0], bigram[1])
-
-                # ensure that word is subject to case-insensitivity
-                inputState = utils._make_lower(word1)
-                outputState = bigram[2]
-
-                # check if our dict already contains the inputState, update by adding an output state
-                if inputState in bigramsDict:
-                    (w1, w2) = bigramsDict[inputState]
-                    w2.append(outputState)
+                if word in bigrams_dict:
+                    (w1, w2) = bigrams_dict[word]
+                    w2.append(bigram[1])
                 else:
-                    bigramsDict[inputState] = (word1, [outputState])
+                    bigrams_dict[word] = (word, [bigram[1]])
 
-        # at this point, fullBigrams contains the markovChain with probabilities in fractions
-        fullBigrams = bigramsDict.values()
-
-        # create final model with probability of next transition state
-        for bigram in fullBigrams:
-            self.bigrams.append((bigram[0], self._compute_probabilities(bigram[1])))
+        full_bigrams = bigrams_dict.values()
+        full_bigrams = [(bigram[0], self._compute_probabilities(bigram[1])) for bigram in full_bigrams]
 
         # delete the final document key
         del self.corpus
+
+        self.bigrams = full_bigrams
 
 
     # TODO: implement
