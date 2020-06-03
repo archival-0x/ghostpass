@@ -12,11 +12,6 @@ There's quite a bit of password managers that are out there today, so why even b
 * __Offline clients__ ( i.e KeePass) don't enable for fast distribution across hosts and portability. They share a unified filetype that require KeePass-compliant client implementations in order to open.
 * __Deterministic password managers__, which are able to produce memory-less and session-less cryptographically secure passwords, fail because of varying password policies and the inability to keep state. Read more [here](https://tonyarcieri.com/4-fatal-flaws-in-deterministic-password-managers).
 
-We aim to fix these problems through a novel protocol that keep cryptographic insecurity at a minimum, enable for maximum portability, while still securely keeping
-state.
-
-Ghostpass is __NOT__ a singular password manager, but rather a protocol that can be employed through various languages and technologies. For more information about the designof the cryptographic protocol and an evaluation of its security, refer to the whitepaper (TODO).
-
 ## install
 
 With `pip` (TODO):
@@ -122,7 +117,6 @@ $ source env/bin/activate
 $ pip install -r requirements.txt
 ```
 
-## todo
+## license
 
-* [ ] Robust file validity to enforce no tampering
-* [ ] Uniform pickl-ing rather than JSON de/serialiazation for session inits
+[MIT](https://codemuch.tech/license.txt)

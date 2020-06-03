@@ -53,7 +53,7 @@ class Ghostpass(object):
             corpus = "".join(fd.readlines())
 
         # initialize Markov object with corpus
-        self.model = crypto.MarkovHelper(corpus)
+        self.model = crypto.Markov(corpus)
         self.model.init_mc()
 
         self.uuid = str(uuid.uuid4())
@@ -76,16 +76,12 @@ class Ghostpass(object):
             f.write(jsonpickle.encode(self))
 
 
-    def _check_field_existence(self, field):
+    def _check_field_existence(self, field: str) -> bool:
         """
         check to see if the specified field already exists in
         our set of data
         """
-        for f in self.data:
-            for k, v in f.iteritems():
-                if k == field:
-                    return True
-        return False
+        return any(field in f for f in self.data)
 
 
     def view_field(self, field):

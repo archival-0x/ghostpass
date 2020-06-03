@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+"""
+setup.py
+
+    Installs the ghostpass CLI tool and enables module for use as library.
+"""
+
 from setuptools import setup, find_packages
 
 from ghostpass import consts
@@ -14,10 +21,10 @@ maintaining security and data integrity."""
 setup(
     name = NAME,
     version = VERSION,
-    author = "Alan Cao",
+    author = "ex0dus",
     author_email = 'ex0dus@codemuch.tech',
     description = DESC,
-    license = "GPLv3",
+    license = "MIT",
     url=REPO,
     download_url='{}/archive/v{}'.format(REPO, VERSION),
     keywords=[
@@ -45,6 +52,6 @@ setup(
         'Environment :: Console',
         'Natural Language :: English',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
     ]
 )

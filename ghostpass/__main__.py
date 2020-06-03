@@ -47,21 +47,17 @@ def man(argument):
 
 
 
-
 def check_arg(argument):
     """
     Argument-checking method that ensures that the specified command could be found.
     """
     if not argument in consts.COMMANDS.keys():
         print("Command '" + str(argument) + "' not found! Please specify one of these:\n")
-        sys.stdout.write("\t")
         for arg in consts.COMMANDS:
-            sys.stdout.write("" + arg + " ")
+            print(" {} \t".format(arg))
         print("\n\nFor more about each command individually, use 'ghostpass help <command>'")
         return 1
     return 0
-
-
 
 
 

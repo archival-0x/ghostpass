@@ -1,8 +1,11 @@
 """
-    utils.py
-        Helper functions, mostly for text manipulation
+utils.py
+
+  Helper functions, mostly for text manipulation
+
 """
 import re
+
 from . import consts
 
 def word_lower(word):

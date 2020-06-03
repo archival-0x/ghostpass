@@ -20,17 +20,20 @@ from . import utils
 from . import consts
 
 
-class MarkovHelper:
+class Markov:
     """
-    The MarkovHelper class provides an interface to several methods that enable for the creation of a
-    Markov chain model, and enable encryption / decryption through the specified corpus. These methods
-    were largely based off of Dr. H. Moraldo's Markov textual steganography research, specified here:
-    https://github.com/hmoraldo/markovTextStego
+    The Markov class provides an interface to several methods that enable for the creation of a Markov chain model, which
+    contains the list of nodes, their frequency counts and probabilities after extracting n-grams given a corpus file
     """
 
     def __init__(self, corpus):
-        self.corpus = corpus
-        self.bigrams = []
+        """
+        initialize a Markov-chained model for generating plaintext-like
+        ciphertext. This is used for both encryption AND decryption.
+        """
+
+        # delete the document key
+        del corpus
 
 
     def _compute_probabilities(self, words):
@@ -43,46 +46,13 @@ class MarkovHelper:
         return [(c[0], (c[1], total)) for c in count]
 
 
-    def init_mc(self):
-        """
-        initialize a Markov-chained model for generating plaintext-like
-        ciphertext. This is used for both encryption AND decryption.
-        """
-
-        # break specified corpus into lines using regex
-        lines = [re.findall(r"\w[\w']*", line) for line
-                in re.split(r"\r\n\r\n|\n\n|\,|\.|\!", self.corpus)]
-        lines = [[consts.MARKOV_START] + line + [consts.MARKOV_START] for line
-                in lines if len(line) >= consts.MIN_LINE_LEN]
-
-        # initialize bigrams from words in lines
-        bigrams = [[(line[word], line[word + 1]) for word in range(len(line) - 1)] for line in lines]
-
-        bigrams_dict = {}
-
-        for line in bigrams:
-            for bigram in line:
-                
-                word = utils.word_lower(bigram[0])
-
-                if word in bigrams_dict:
-                    (w1, w2) = bigrams_dict[word]
-                    w2.append(bigram[1])
-                else:
-                    bigrams_dict[word] = (word, [bigram[1]])
-
-        full_bigrams = bigrams_dict.values()
-        full_bigrams = [(bigram[0], self._compute_probabilities(bigram[1])) for bigram in full_bigrams]
-
-        # delete the final document key
-        del self.corpus
-
-        self.bigrams = full_bigrams
-
-
     # TODO: implement
     def encrypt_text(self, cleartext):
-        return 0
+        bytelist = self.convert_to_bytelist(len(cleartext), 2)
+        bitsfield = BitField(bytelist)
+
+        bitsfield = BitField(data)
+
 
 
     # TODO: implement
@@ -91,15 +61,14 @@ class MarkovHelper:
 
 
 
-
-
 class AESHelper:
     """
-    AESHelper is a class that provides an interface for AES-CBC
-    encryption and decryption. While the Ghostpass protocol does not
-    require the use of AES, we utilize it in this reference implementation
-    to show the plugability of other cryptographic protocols. AES in this
-    context is used to encrypt fields.
+    AESHelper is an interface that provides an interface for AES-CBC
+    encryption and decryption.
+
+    While the Ghostpass protocol does not require the use of AES, we utilize it in this reference
+    implementation to show the plugability of other cryptographic protocols. AES in this context is
+    used to encrypt fields.
     """
 
     def __init__(self, key):
