@@ -1,122 +1,24 @@
 # ghostpass
 
-> WARNING: still WIP!
+Novel(ty) secrets manager cryptosystem that enables users to distribute sensitive secrets in plainsight with plausible deniability.
 
-Ghostpass is a dead simple password management protocol that enables users to distribute cleartext-like ciphertext to the open web, while still maintaining security and data integrity.
 
-## intro
+## Introduction
 
-There's quite a bit of password managers that are out there today, so why even bother with Ghostpass? In order to answer this question, let's take a look at several different password managers "models" that already exist, and the problems that plague them:
+__Ghostpass__ is a password management cryptography scheme that transforms secrets into cleartext for the purpose of distribution across public mediums. It is _novel_ as it combines modern symmetric cryptography with textual steganography and plausible deniability in order to address privacy. It is considered  _novelty_ because it is __NOT__ a full replacement for current cryptographic software, but an ongoing effort to bridge together cryptography and privacy research. I encourage users to criticize, audit and expose shortcomings in order to better understand how these types of implementations can better be harnessed in the space of digital privacy.
 
-* __Web-based password managers__ are centralized, and data breeches because of undiscovered vulnerability results in catastrophic events.
-* __Offline clients__ ( i.e KeePass) don't enable for fast distribution across hosts and portability. They share a unified filetype that require KeePass-compliant client implementations in order to open.
-* __Deterministic password managers__, which are able to produce memory-less and session-less cryptographically secure passwords, fail because of varying password policies and the inability to keep state. Read more [here](https://tonyarcieri.com/4-fatal-flaws-in-deterministic-password-managers).
+### Why Ghostpass?
 
-## install
+There's quite a bit of password managers that are out there today, so why even bother with Ghostpass? In order to answer this question, let's take a look at different password managers "models" that already exist, and the problems that plague them:
 
-With `pip` (TODO):
+* __Web-based password managers__ are centralized, and data breaches are possible since they are central points of failure.
+* __Offline clients__ ( i.e KeePass) don't enable for fast distribution across hosts and portability. They share a unified filetype that require compliant client implementations to work
 
-```
-$ pip install ghostpass
-```
+### Features
 
-Manually (use `virtualenv` for dev environment):
 
-```
-$ git clone https://github.com/ex0dus-0x/ghostpass.git
-$ cd ghostpass/
-$ python setup.py install
-```
+## Contributing
 
-## usage
+## License
 
-```
-Available Commands:
-
-ghostpass help <command>
-    - Prints help for a specific command
-
-ghostpass init
-    - Creates a new ghostpass session with master password
-    - Pseudo-random ID created to identify session
-
-ghostpass open <session>
-    - Opens ghostpass session with master password
-    - If only one session exists and session argument not provided,
-    that is opened as default
-
-ghostpass close
-    - Closes ghostpass session, if any is opened
-    - Changes should be STASHED to original session to save
-
-ghostpass add <field>
-    - Adds a new secret associated with <field> to current session
-
-ghostpass remove <field>
-    - Removes secret associated with <field> from current session
-
-ghostpass view <field>
-    - Shows unencrypted secret associated with <field> in current session
-
-ghostpass stash
-    - Commits changes made in opened session
-    - Does not close session, but only writes changes to it
-
-ghostpass list
-    - Shows all sessions created by user
-
-ghostpass secrets
-    - Shows all fields and respective secrets in current session
-
-ghostpass encrypt
-    - Creates encrypted ciphertext with specified corpus of current session
-    - Does not work independently
-
-ghostpass decrypt <corpus> <ciphertext>
-    - Decrypts specific ciphertext with corpus and master key
-    - Works independent of whether user is in session or not
-
-ghostpass destruct <session>
-    - Destroys <session>
-    - If only one session exists and session argument not provided,
-    that is destructed as default
-
-```
-
-Example use case:
-
-```
-$ ghostpass init
-$ ghostpass open <SESSION>
-$ ghostpass add facebook
-$ ghostpass stash
-$ ghostpass close
-```
-
-## contribute
-
-To create a new branch for contributions:
-
-```
-$ git remote add upstream https://github.com/ex0dus-0x/ghostpass
-$ git checkout -b my-branch-name
-$ # do code, do tests, etc etc
-$ git add .
-$ git commit -m "Useful commit message"
-$ git push origin my-branch-name
-```
-
-Of course, remember to `git fetch` for changes.
-
-To setup a development environment:
-
-```
-$ pip install virutalenv
-$ virtualenv env/
-$ source env/bin/activate
-$ pip install -r requirements.txt
-```
-
-## license
-
-[MIT](https://codemuch.tech/license.txt)
+[MIT License](https://codemuch.tech/license.txt)
