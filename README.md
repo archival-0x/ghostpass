@@ -2,7 +2,6 @@
 
 Novel(ty) secrets manager cryptosystem that enables users to distribute sensitive secrets in plainsight with plausible deniability.
 
-
 ## Introduction
 
 __Ghostpass__ is a password management cryptography scheme that transforms secrets into cleartext for the purpose of distribution across public mediums. It is _novel_ as it combines modern symmetric cryptography with textual steganography and plausible deniability in order to address privacy. It is considered  _novelty_ because it is __NOT__ a full replacement for current cryptographic software, but an ongoing effort to bridge together cryptography and privacy research. I encourage users to criticize, audit and expose shortcomings in order to better understand how these types of implementations can better be harnessed in the space of digital privacy.
