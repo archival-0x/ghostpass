@@ -6,8 +6,20 @@ import (
     "fmt"
 
     "github.com/urfave/cli/v2"
-    //"github.com/ex0dus-0x/ghostpass"
+    "github.com/awnumar/memguard"
 )
+
+func ReadKeyFromStdin() (*memguard.Enclave, error) {
+	key, err := memguard.NewBufferFromReaderUntil(os.Stdin, '\n')
+	if err != nil {
+		return nil, err
+	}
+	if key.Size() == 0 {
+		return nil, errors.New("no input received")
+	}
+	return key.Seal(), nil
+}
+
 
 func main() {
     app := &cli.App {
@@ -16,8 +28,8 @@ func main() {
         Commands: []*cli.Command {
             {
                 Name: "init",
-                Category: "Database Initialization",
-                Usage: "initializes a new secret database",
+                Category: "Initialization",
+                Usage: "initializes a new secret credential store",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
@@ -28,8 +40,8 @@ func main() {
             },
             {
                 Name: "destruct",
-                Category: "Database Initialization",
-                Usage: "completely nuke a password database",
+                Category: "Initialization",
+                Usage: "completely nuke a credential store given its name",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
@@ -40,8 +52,8 @@ func main() {
             },
             {
                 Name: "add",
-                Category: "Database Operations",
-                Usage: "add a new field to the password database",
+                Category: "Credential Store Operations",
+                Usage: "add a new field to the credential store",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.BoolFlag{Name: "service", Aliases: []string{"s"}},
@@ -54,9 +66,9 @@ func main() {
             },
             {
                 Name: "remove",
-                Category: "Database Operations",
+                Category: "Credential Store Operations",
                 Aliases: []string{"rm"},
-                Usage: "remove a field from the password database",
+                Usage: "remove a field from the credential store",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.BoolFlag{Name: "service", Aliases: []string{"s"}},
@@ -68,8 +80,8 @@ func main() {
             },
             {
                 Name: "view",
-                Category: "Database Operations",
-                Usage: "decrypt and view a specific field from the password database",
+                Category: "Credential Store Operations",
+                Usage: "decrypt and view a specific field from the credential store",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.BoolFlag{Name: "service", Aliases: []string{"s"}},
@@ -81,7 +93,7 @@ func main() {
             },
             {
                 Name: "import",
-                Category: "Database Distribution",
+                Category: "Distribution",
                 Usage: "imports a new password database given a plainsight file",
                 Action: func(c *cli.Context) error {
                     fmt.Println("import")
@@ -90,8 +102,8 @@ func main() {
             },
             {
                 Name: "export",
-                Category: "Database Distribution",
-                Usage: "generates a plainsight file for distribution from current password database state",
+                Category: "Distribution",
+                Usage: "generates a plainsight file for distribution from current state",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.BoolFlag{Name: "corpus", Aliases: []string{"s"}},
