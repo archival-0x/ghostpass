@@ -4,20 +4,36 @@ import (
     "os"
     "log"
     "fmt"
+    "errors"
 
     "github.com/urfave/cli/v2"
     "github.com/awnumar/memguard"
+    "github.com/ex0dus-0x/ghostpass"
+    "golang.org/x/crypto/ssh/terminal"
 )
 
+// Helper function to safely consume an input from STDIN and store it within a memguard-ed buffer
 func ReadKeyFromStdin() (*memguard.Enclave, error) {
-	key, err := memguard.NewBufferFromReaderUntil(os.Stdin, '\n')
-	if err != nil {
-		return nil, err
-	}
+
+    // read a password from stdin
+    pwd, err := terminal.ReadPassword(1)
+    if err != nil {
+        return nil, err
+    }
+
+    // initialize locked buffer from cleartext
+	key := memguard.NewBufferFromBytes(pwd)
 	if key.Size() == 0 {
 		return nil, errors.New("no input received")
 	}
 	return key.Seal(), nil
+}
+
+// Database Initialization routine: install interrupt handler for sudden exits and purge cache when
+// execution terminates in some way.
+func init() {
+    memguard.CatchInterrupt()
+    defer memguard.Purge()
 }
 
 
@@ -28,19 +44,37 @@ func main() {
         Commands: []*cli.Command {
             {
                 Name: "init",
-                Category: "Initialization",
+                Category: "Database Initialization",
                 Usage: "initializes a new secret credential store",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
-                    fmt.Println("init")
+                    fmt.Printf("Initializing new credential store %s\n\n", c.Args().First())
+
+                    // read key and store in buffer safely
+                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    pwd, err := ReadKeyFromStdin()
+                    if err != nil {
+                        fmt.Errorf("Error reading key from STDIN: %s", err)
+                    }
+
+                    // create new credential store
+                    store, err := ghostpass.InitCredentialStore(c.Args().First(), pwd)
+                    if err != nil {
+                        fmt.Errorf("Cannot initialize new credential store: %s", err)
+                    }
+
+                    // commit, writing the empty store to its new path
+                    if err := store.CommitStore(); err != nil {
+                        fmt.Errorf("Cannot commit store to persistent path: %s", err)
+                    }
                     return nil
                 },
             },
             {
                 Name: "destruct",
-                Category: "Initialization",
+                Category: "Database Initialization",
                 Usage: "completely nuke a credential store given its name",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
@@ -93,7 +127,7 @@ func main() {
             },
             {
                 Name: "import",
-                Category: "Distribution",
+                Category: "Database Distribution",
                 Usage: "imports a new password database given a plainsight file",
                 Action: func(c *cli.Context) error {
                     fmt.Println("import")
@@ -102,7 +136,7 @@ func main() {
             },
             {
                 Name: "export",
-                Category: "Distribution",
+                Category: "Database Distribution",
                 Usage: "generates a plainsight file for distribution from current state",
                 Flags: []cli.Flag{
                     &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},

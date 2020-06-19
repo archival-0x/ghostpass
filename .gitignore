@@ -1,12 +1,2 @@
-*.pyc
-*.pickle
-*.so
-*.o
-*.out
-
-example_corpus.txt
-
-venv/
-build/
-*.egg-info/
-dist/
+ghostpass
+main

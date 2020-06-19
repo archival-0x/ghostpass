@@ -13,6 +13,6 @@ const (
 
 // Checks to see if a given corpus file contains zero-width characters
 func ContainsHiddenChars(corpus string) bool {
-	return strings.ContainsRune(s, ZWJ) ||
-		strings.ContainsRune(s, ZWNJ)
+	return strings.ContainsRune(corpus, ZWJ) ||
+		strings.ContainsRune(corpus, ZWNJ)
 }
