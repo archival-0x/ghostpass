@@ -11,34 +11,17 @@ import (
 )
 
 const (
-    // default storage path for databases
+    // default configuration storage path for credential stores
     StoragePath string = ".ghostpass"
 )
 
-type Field struct {
-    Key []byte
-    Secret string
-    DeniableSecret *string
-}
-
-func InitField(username string, pwd *memguard.Enclave) *Field {
-    var secret_key string
-    return &Field {
-        Secret: secret_key,
-        DeniableSecret: nil,
-    }
-}
-
-func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
-    return
-}
 
 // defines a serializable credential store, which can be instantiated to securely
 // store secrets within a field of the store
 type CredentialStore struct {
     Name string `json:"name"`
-    Checksum string `json:"checksum"`
-    Fields map[string]Field `json:"fields"`
+    SymmetricKey string `json:"-"`
+    Fields map[string]string `json:"fields"`
 }
 
 // given a name to a credential store DB, check to see if it exists within the ghostpass workspace,
@@ -57,7 +40,7 @@ func InitPath(name string) ([]byte, error) {
     }
 
     // initialize path to database, open/create it, and return the contents
-    dbpath := fmt.Sprintf("%s/%s.gp", StoragePath, name);
+    dbpath := fmt.Sprintf("%s/%s.gp", storepath, name);
     if _, err := os.Stat(dbpath); os.IsNotExist(err) {
 
         // open file with flags to create if not found
@@ -94,7 +77,7 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
     if err != nil {
         return nil, err
     }
-    checksum := sha256.Sum256(key.Bytes())
+    symmetrickey := sha256.Sum256(key.Bytes())
 
     // check if there is already existing data, and deserialize and return if so
     // TODO: better way to do this?
@@ -109,7 +92,7 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
     // if not, create an empty CredentialStore
     return &CredentialStore {
         Name: name,
-        Checksum: string(checksum[:]),
+        Checksum: string(symmetrickey[:]),
         Fields: nil,
     }, nil
 }
@@ -117,6 +100,10 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
 // adds a new field to the credential store, given a service, and a username and secured buffer
 // with a password.
 func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
+    // initialize a new field from the given parameters
+
+    // add to mapping
+    cs.Fields[service] = field
     return nil
 }
 
@@ -126,11 +113,12 @@ func (cs *CredentialStore) RemoveField(service string) {
 }
 
 func (cs *CredentialStore) CommitStore() error {
-    // open database path
+
+    // construct and open path to credential store
     storepath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), StoragePath)
     dbpath := fmt.Sprintf("%s/%s.gp", storepath, cs.Name);
 
-    // serialize for writing to file
+    // serialize structure for writing to file
     data, err := json.Marshal(cs)
     if err != nil {
         return err

@@ -53,25 +53,26 @@ func main() {
                 },
                 Action: func(c *cli.Context) error {
 
+                    // get string flag set for dbname
                     dbname := c.String("dbname")
-                    fmt.Printf("Initializing new credential store %s\n\n", dbname)
+                    fmt.Printf("Initializing new credential store `%s`\n\n", dbname)
 
-                    // read key and store in buffer safely
+                    // read master key and store in buffer safely
                     fmt.Printf("\t> Master Key (will not be echoed): ")
-                    pwd, err := ReadKeyFromStdin()
+                    masterkey, err := ReadKeyFromStdin()
                     if err != nil {
-                        fmt.Errorf("Error reading key from STDIN: %s", err)
+                        return err
                     }
 
                     // create new credential store
-                    store, err := ghostpass.InitCredentialStore(dbname, pwd)
+                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
                     if err != nil {
-                        fmt.Errorf("Cannot initialize new credential store: %s", err)
+                        return err
                     }
 
                     // commit, writing the empty store to its new path
                     if err := store.CommitStore(); err != nil {
-                        fmt.Errorf("Cannot commit store to persistent path: %s", err)
+                        return err
                     }
                     return nil
                 },
@@ -84,7 +85,10 @@ func main() {
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
-                    fmt.Println("destruct")
+                    // commit, writing the changes to the persistent store
+                    if err := store.CommitStore(); err != nil {
+                        return err
+                    }
                     return nil
                 },
             },
@@ -98,7 +102,19 @@ func main() {
                     &cli.StringFlag{Name: "username", Aliases: []string{"u"}},
                 },
                 Action: func(c *cli.Context) error {
-                    fmt.Println("add")
+
+                    service := c.String("service")
+
+                    // read password for service and store in buffer safely
+                    fmt.Printf("\t> Password for `%s` (will not be echoed): ", service)
+                    pwd, err := ReadKeyFromStdin()
+                    if err != nil {
+                        return err
+                    }
+                    // commit, writing the changes to the persistent store
+                    if err := store.CommitStore(); err != nil {
+                        return err
+                    }
                     return nil
                 },
             },

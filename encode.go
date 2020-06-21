@@ -1,6 +1,7 @@
 package ghostpass
 
 import (
+    "fmt"
     "strings"
     "strconv"
 )
@@ -22,7 +23,10 @@ func ContainsHiddenChars(corpus string) bool {
 }
 
 // given a plaintext string corpus and a secret to hide, encode it with zero-width characters
-func EncodeHiddenString(plain string, secret string) string {
+func EncodeHiddenString(plain string, secret []byte) string {
+
+    // TODO: compress the bytes representing the secret
+
     // convert secret string into binary representation
     var binary []byte
     for _, c := range secret {
@@ -44,12 +48,14 @@ func EncodeHiddenString(plain string, secret string) string {
     return corpus.String()
 }
 
+// given a corpus string with encoded zero-width characters, find them and strip them back
+// for deserialization,
 func DecodeHiddenString(corpus string) []byte {
     var result []byte
 
     // iterate through corpus and parse out zero-width unicode chars
-    for b := range byte[](corpus) {
-
+    for b := range []byte(corpus) {
+        fmt.Println(b)
     }
 
     return result
