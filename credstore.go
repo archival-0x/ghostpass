@@ -37,7 +37,7 @@ func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
 // store secrets within a field of the store
 type CredentialStore struct {
     Name string `json:"name"`
-    Checksum [32]byte `json:"checksum"`
+    Checksum string `json:"checksum"`
     Fields map[string]Field `json:"fields"`
 }
 
@@ -109,17 +109,20 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
     // if not, create an empty CredentialStore
     return &CredentialStore {
         Name: name,
-        Checksum: checksum,
+        Checksum: string(checksum[:]),
         Fields: nil,
     }, nil
 }
 
+// adds a new field to the credential store, given a service, and a username and secured buffer
+// with a password.
 func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
     return nil
 }
 
-func (cs *CredentialStore) RemoveField(service string) error {
-    return nil
+// given a service name as the key, delete the entry from the map that stores each credential field
+func (cs *CredentialStore) RemoveField(service string) {
+    delete(cs.Fields, service)
 }
 
 func (cs *CredentialStore) CommitStore() error {

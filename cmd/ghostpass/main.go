@@ -5,6 +5,7 @@ import (
     "log"
     "fmt"
     "errors"
+    "syscall"
 
     "github.com/urfave/cli/v2"
     "github.com/awnumar/memguard"
@@ -16,7 +17,7 @@ import (
 func ReadKeyFromStdin() (*memguard.Enclave, error) {
 
     // read a password from stdin
-    pwd, err := terminal.ReadPassword(1)
+    pwd, err := terminal.ReadPassword(int(syscall.Stdin))
     if err != nil {
         return nil, err
     }
@@ -26,6 +27,7 @@ func ReadKeyFromStdin() (*memguard.Enclave, error) {
 	if key.Size() == 0 {
 		return nil, errors.New("no input received")
 	}
+
 	return key.Seal(), nil
 }
 
@@ -47,10 +49,12 @@ func main() {
                 Category: "Database Initialization",
                 Usage: "initializes a new secret credential store",
                 Flags: []cli.Flag{
-                    &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
-                    fmt.Printf("Initializing new credential store %s\n\n", c.Args().First())
+
+                    dbname := c.String("dbname")
+                    fmt.Printf("Initializing new credential store %s\n\n", dbname)
 
                     // read key and store in buffer safely
                     fmt.Printf("\t> Master Key (will not be echoed): ")
@@ -60,7 +64,7 @@ func main() {
                     }
 
                     // create new credential store
-                    store, err := ghostpass.InitCredentialStore(c.Args().First(), pwd)
+                    store, err := ghostpass.InitCredentialStore(dbname, pwd)
                     if err != nil {
                         fmt.Errorf("Cannot initialize new credential store: %s", err)
                     }
@@ -77,7 +81,7 @@ func main() {
                 Category: "Database Initialization",
                 Usage: "completely nuke a credential store given its name",
                 Flags: []cli.Flag{
-                    &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
                     fmt.Println("destruct")
@@ -89,9 +93,9 @@ func main() {
                 Category: "Credential Store Operations",
                 Usage: "add a new field to the credential store",
                 Flags: []cli.Flag{
-                    &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.BoolFlag{Name: "service", Aliases: []string{"s"}},
-                    &cli.BoolFlag{Name: "username", Aliases: []string{"u"}},
+                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
+                    &cli.StringFlag{Name: "username", Aliases: []string{"u"}},
                 },
                 Action: func(c *cli.Context) error {
                     fmt.Println("add")
@@ -104,8 +108,8 @@ func main() {
                 Aliases: []string{"rm"},
                 Usage: "remove a field from the credential store",
                 Flags: []cli.Flag{
-                    &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.BoolFlag{Name: "service", Aliases: []string{"s"}},
+                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
                 },
                 Action: func(c *cli.Context) error {
                     fmt.Println("rm")
@@ -117,8 +121,8 @@ func main() {
                 Category: "Credential Store Operations",
                 Usage: "decrypt and view a specific field from the credential store",
                 Flags: []cli.Flag{
-                    &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.BoolFlag{Name: "service", Aliases: []string{"s"}},
+                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
                 },
                 Action: func(c *cli.Context) error {
                     fmt.Println("view")
@@ -139,8 +143,8 @@ func main() {
                 Category: "Database Distribution",
                 Usage: "generates a plainsight file for distribution from current state",
                 Flags: []cli.Flag{
-                    &cli.BoolFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.BoolFlag{Name: "corpus", Aliases: []string{"s"}},
+                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{Name: "corpus", Aliases: []string{"s"}},
                 },
                 Action: func(c *cli.Context) error {
                     fmt.Println("export")
