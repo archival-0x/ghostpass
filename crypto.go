@@ -4,6 +4,7 @@ package ghostpass
 
 import (
     "strings"
+    "github.com/awnumar/memguard"
 )
 
 // represents a field, a struct that derives a hash of the finalized ciphertext from a
@@ -19,23 +20,21 @@ type Field struct {
 
 func InitField(service string, username string, pwdhash string, key *memguard.Enclave) *Field {
     var secret strings.Builder
-    secret.WriteString(username
+    secret.WriteString(username)
+    secret.WriteString(pwdhash)
 
     return &Field {
         Key: key,
         Service: service,
-        Secret: secret.ToString(),
+        Secret: secret.String(),
         DeniableSecret: nil,
     }
 }
 
 // given an encrypted service parameter and compressed field string, decrypt them all
 // and reconstruct a `Field` from them.
-func FromCompressed(key *memguard.Enclave service string, compressed string) *Field {
-    return &Field {
-        Key: key,
-        Service: decrypte
-    }
+func FromCompressed(key *memguard.Enclave, service string, compressed string) *Field {
+    return nil
 }
 
 func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {

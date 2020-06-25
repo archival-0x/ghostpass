@@ -3,6 +3,7 @@ package ghostpass
 import (
     "os"
     "fmt"
+    "errors"
     "io/ioutil"
     "encoding/json"
     "crypto/sha256"
@@ -92,7 +93,7 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
     // if not, create an empty CredentialStore
     return &CredentialStore {
         Name: name,
-        Checksum: string(symmetrickey[:]),
+        SymmetricKey: string(symmetrickey[:]),
         Fields: nil,
     }, nil
 }
@@ -100,16 +101,28 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
 // adds a new field to the credential store, given a service, and a username and secured buffer
 // with a password.
 func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
-    // initialize a new field from the given parameters
+    // TODO: initialize a new field from the given parameters
+
+    // TODO: add in deniable key if also specified
 
     // add to mapping
-    cs.Fields[service] = field
+    cs.Fields[service] = field.ToCompressed()
     return nil
 }
 
 // given a service name as the key, delete the entry from the map that stores each credential field
 func (cs *CredentialStore) RemoveField(service string) {
     delete(cs.Fields, service)
+}
+
+// given a service name as the key, reveal the contents safely for the given entry
+func (cs *CredentialStore) GetField(service string) error {
+    if val, ok := cs.Fields[service]; !ok {
+        return errors.New("Cannot find entry given the service provided")
+    }
+
+    // TODO
+    return nil
 }
 
 func (cs *CredentialStore) CommitStore() error {
