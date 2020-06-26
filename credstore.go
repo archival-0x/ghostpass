@@ -140,3 +140,25 @@ func (cs *CredentialStore) CommitStore() error {
     // write to file
     return ioutil.WriteFile(dbpath, data, 0644)
 }
+
+// given a corpus to hide in, take the current state of the credential store,
+// and export a version of it hidden within the corpus through zero-width encoding
+func (cs *CredentialStore) Export(corpus string) (string, error) {
+    // serialize structure into JSON
+    data, err := json.Marshal(cs)
+    if err != nil {
+        return "", err
+    }
+
+    // compression algorithm
+    compressed_data := data
+
+    // generate resultant plainsight output
+    res := EncodeHiddenString(corpus, compressed_data)
+    return res, nil
+}
+
+
+func (cs *CredentialStore) Import(key *memguard.Enclave, encoded string) error {
+    return nil
+}

@@ -51,12 +51,14 @@ func EncodeHiddenString(plain string, secret []byte) string {
 // given a corpus string with encoded zero-width characters, find them and strip them back
 // for deserialization,
 func DecodeHiddenString(corpus string) []byte {
-    var result []byte
+    var binresult []byte
 
     // iterate through corpus and parse out zero-width unicode chars
     for b := range []byte(corpus) {
-        fmt.Println(b)
+        binresult = append(binresult, b)
     }
+
+    // decode
 
     return result
 }
