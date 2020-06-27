@@ -21,7 +21,7 @@ const (
 // store secrets within a field of the store
 type CredentialStore struct {
     Name string `json:"name"`
-    SymmetricKey string `json:"-"`
+    SymmetricKey *memguard.Enclave `json:"-"`
     Fields map[string]string `json:"fields"`
 }
 
@@ -63,7 +63,7 @@ func InitPath(name string) ([]byte, error) {
 
 // initializes a credential store given a path to the database, with appropriate
 // error-handling when necessary. Database that does not exist within workspace is initialized
-// as an empty credential store
+// as an empty credential store.
 func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 
     // given a name to a db, open/create it from the workspace, and read bytes for serialization
@@ -78,30 +78,42 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
     if err != nil {
         return nil, err
     }
-    symmetrickey := sha256.Sum256(key.Bytes())
+    checksum := sha256.Sum256(key.Bytes())
 
-    // check if there is already existing data, and deserialize and return if so
-    // TODO: better way to do this?
+    // lock up the new hash checksum copy
+    symkey := memguard.NewBufferFromBytes(checksum[:])
+
+    // check if there is already existing data, and deserialize, set the hashed symmetric key
+    // and return the state
     if string(data) != "" {
         var credstore CredentialStore
         if err := json.Unmarshal(data, &credstore); err != nil {
             return nil, err
         }
+        credstore.SymmetricKey = symkey.Seal()
         return &credstore, nil
     }
+
+    // TODO: destroy key
 
     // if not, create an empty CredentialStore
     return &CredentialStore {
         Name: name,
-        SymmetricKey: string(symmetrickey[:]),
+        SymmetricKey: symkey.Seal(),
         Fields: nil,
     }, nil
 }
 
+
 // adds a new field to the credential store, given a service, and a username and secured buffer
 // with a password.
 func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
-    // TODO: initialize a new field from the given parameters
+
+    // initialize a new field from the given parameters
+    field, err := InitField(cs.SymmetricKey, service, username, pwd)
+    if err != nil {
+        return err
+    }
 
     // TODO: add in deniable key if also specified
 
@@ -110,10 +122,12 @@ func (cs *CredentialStore) AddField(service string, username string, pwd *memgua
     return nil
 }
 
+
 // given a service name as the key, delete the entry from the map that stores each credential field
 func (cs *CredentialStore) RemoveField(service string) {
     delete(cs.Fields, service)
 }
+
 
 // given a service name as the key, reveal the contents safely for the given entry
 func (cs *CredentialStore) GetField(service string) error {
@@ -121,10 +135,16 @@ func (cs *CredentialStore) GetField(service string) error {
         return errors.New("Cannot find entry given the service provided")
     }
 
+    // decrypt the contents of the field and return for display
+    field := FromCompressed(cs.SymmetricKey, enc_service, val)
+
     // TODO
     return nil
 }
 
+
+// any changes that are written to the credential store structure are then saved to the persistent
+// store in the workspace.
 func (cs *CredentialStore) CommitStore() error {
 
     // construct and open path to credential store
@@ -141,6 +161,14 @@ func (cs *CredentialStore) CommitStore() error {
     return ioutil.WriteFile(dbpath, data, 0644)
 }
 
+
+// nukes the entire state of a given credential store, deleting all traces of it in-memory and
+// on the filesystem.
+func (cs *CredentialStore) DestroyStore() error {
+    return nil
+}
+
+
 // given a corpus to hide in, take the current state of the credential store,
 // and export a version of it hidden within the corpus through zero-width encoding
 func (cs *CredentialStore) Export(corpus string) (string, error) {
@@ -151,6 +179,7 @@ func (cs *CredentialStore) Export(corpus string) (string, error) {
     }
 
     // compression algorithm
+    // TODO
     compressed_data := data
 
     // generate resultant plainsight output

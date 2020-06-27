@@ -58,6 +58,6 @@ func DecodeHiddenString(corpus string) []byte {
     }
 
     // decode
-
+    var result []byte
     return result
 }

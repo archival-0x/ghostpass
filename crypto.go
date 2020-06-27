@@ -17,16 +17,17 @@ import (
 // final encrypted mapping
 type Field struct {
     Key *memguard.Enclave
+    DeniableKey *memguard.Enclave
     Service string
     Secret string
     DeniableSecret *string
 }
 
 
-func GCMEncrypt(key_enclave *memguard.Enclave, plaintext []byte) (string, error) {
+func GCMEncrypt(enclave *memguard.Enclave, plaintext []byte) (string, error) {
 
     // unseal the key and prepare the cipher
-    key, err := key_enclave.Open()
+    key, err := enclave.Open()
     if err != nil {
         return "", err
     }
@@ -53,13 +54,25 @@ func GCMEncrypt(key_enclave *memguard.Enclave, plaintext []byte) (string, error)
     return string(ciphertext), nil
 }
 
-func InitField(service string, username string, pwdhash string, key *memguard.Enclave) (*Field, error) {
+
+func GCMDecrypt(enclave *memguard.Enclave, ciphertext []byte) (string, error) {
+    return "", nil
+}
+
+
+func InitField(key *memguard.Enclave, service string, username string, pwd *memguard.Enclave) (*Field, error) {
+
+    // unseal the password
+    clearpwd, err := pwd.Open()
+    if err != nil {
+        return nil, err
+    }
 
     // initialize the secret
     var secretstr strings.Builder
     secretstr.WriteString(username)
     secretstr.WriteString(":")
-    secretstr.WriteString(pwdhash)
+    secretstr.WriteString(string(clearpwd.Bytes()))
 
     // encrypt the secret with the key
     secret, err := GCMEncrypt(key, []byte(secretstr.String()))
@@ -69,6 +82,7 @@ func InitField(service string, username string, pwdhash string, key *memguard.En
 
     return &Field {
         Key: key,
+        DeniableKey: nil,
         Service: service,
         Secret: secret,
         DeniableSecret: nil,
@@ -87,9 +101,8 @@ func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
     return
 }
 
-// after initializing an encrypted field and possibly adding a deniable secret, return a
-// mapping that can be stored back into the credential store securely.
+// after initializing an encrypted field and possibly adding a deniable secret, return
 // TODO: deal with deniable secrets
-func (f *Field) ToMapping() (string, string) {
-    return f.Service, f.Secret
+func (f *Field) ToCompressed() string {
+    return f.Secret
 }
