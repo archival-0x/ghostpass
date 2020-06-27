@@ -1,7 +1,6 @@
 package ghostpass
 
 import (
-    "fmt"
     "strings"
     "strconv"
 )
@@ -54,7 +53,7 @@ func DecodeHiddenString(corpus string) []byte {
     var binresult []byte
 
     // iterate through corpus and parse out zero-width unicode chars
-    for b := range []byte(corpus) {
+    for _, b := range []byte(corpus) {
         binresult = append(binresult, b)
     }
 

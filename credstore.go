@@ -160,5 +160,6 @@ func (cs *CredentialStore) Export(corpus string) (string, error) {
 
 
 func (cs *CredentialStore) Import(key *memguard.Enclave, encoded string) error {
+    // extract out the
     return nil
 }

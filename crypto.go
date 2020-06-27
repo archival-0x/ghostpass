@@ -3,7 +3,11 @@
 package ghostpass
 
 import (
+    "io"
     "strings"
+    "crypto/aes"
+    "crypto/rand"
+    "crypto/cipher"
     "github.com/awnumar/memguard"
 )
 
@@ -19,16 +23,16 @@ type Field struct {
 }
 
 
-func GCMEncrypt(key_enclave *memguard.Enclave, plaintext string) (string, error) {
+func GCMEncrypt(key_enclave *memguard.Enclave, plaintext []byte) (string, error) {
 
     // unseal the key and prepare the cipher
-    key, err := key_enclave.Unseal()
+    key, err := key_enclave.Open()
     if err != nil {
         return "", err
     }
 
     // initialize GCM cipher
-    block, err := aes.NewCipher(key)
+    block, err := aes.NewCipher(key.Bytes())
     if err != nil {
         return "", err
     }
@@ -46,7 +50,7 @@ func GCMEncrypt(key_enclave *memguard.Enclave, plaintext string) (string, error)
 
     // generate ciphertext and return
     ciphertext := aesgcm.Seal(nil, nonce, plaintext, nil)
-    return ciphertext
+    return string(ciphertext), nil
 }
 
 func InitField(service string, username string, pwdhash string, key *memguard.Enclave) (*Field, error) {
@@ -58,14 +62,17 @@ func InitField(service string, username string, pwdhash string, key *memguard.En
     secretstr.WriteString(pwdhash)
 
     // encrypt the secret with the key
-    secret := GCMEncrypt(key, secretstr.String())
+    secret, err := GCMEncrypt(key, []byte(secretstr.String()))
+    if err != nil {
+        return nil, err
+    }
 
     return &Field {
         Key: key,
         Service: service,
         Secret: secret,
         DeniableSecret: nil,
-    }
+    }, nil
 }
 
 // given an encrypted service parameter and compressed field string, decrypt them all
@@ -84,5 +91,5 @@ func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
 // mapping that can be stored back into the credential store securely.
 // TODO: deal with deniable secrets
 func (f *Field) ToMapping() (string, string) {
-    return (f.Service, f.Secret)
+    return f.Service, f.Secret
 }
