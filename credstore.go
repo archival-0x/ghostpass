@@ -131,16 +131,31 @@ func (cs *CredentialStore) AddField(service string, username string, pwd *memgua
 
 
 // given a service name as the key, delete the entry from the map that stores each credential field
-func (cs *CredentialStore) RemoveField(service string) {
-    delete(cs.Fields, service)
+func (cs *CredentialStore) RemoveField(service string) error {
+    // encrypt the service field to check if within the mapping
+    enc_service, err := GCMEncrypt(cs.SymmetricKey, []byte(service))
+    if err != nil {
+        return err
+    }
+    if _, ok := cs.Fields[service]; !ok {
+        return errors.New("cannot find entry given the service name provided")
+    }
+
+    delete(cs.Fields, enc_service)
+    return nil
 }
 
 
 // given a service name as the key, reveal the contents safely for the given entry
 func (cs *CredentialStore) GetField(service string) error {
-    val, ok := cs.Fields[service]
+    // encrypt the service field to check if within the mapping
+    enc_service, err := GCMEncrypt(cs.SymmetricKey, []byte(service))
+    if err != nil {
+        return err
+    }
+    val, ok := cs.Fields[enc_service]
     if !ok {
-        return errors.New("Cannot find entry given the service provided")
+        return errors.New("cannot find entry given the service name provided")
     }
 
     // decrypt the contents of the field and return for display
@@ -165,7 +180,7 @@ func (cs *CredentialStore) CommitStore() error {
         return err
     }
 
-    // write to file
+    // write new state back to the store
     return ioutil.WriteFile(dbpath, data, 0644)
 }
 
@@ -185,7 +200,6 @@ func (cs *CredentialStore) DestroyStore() error {
     }
 
     // golang garbage collection so delete in-memory struct once out of scope, but force it
-    // now anyways
     cs = nil
     return nil
 }

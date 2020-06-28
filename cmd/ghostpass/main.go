@@ -100,6 +100,15 @@ func main() {
                 Action: func(c *cli.Context) error {
 
                     service := c.String("service")
+                    username := c.String("username")
+                    dbname := c.String("dbname")
+
+                    // read master key for the credential store
+                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    masterkey, err := ReadKeyFromStdin()
+                    if err != nil {
+                        return err
+                    }
 
                     // read password for service and store in buffer safely
                     fmt.Printf("\t> Password for `%s` (will not be echoed): ", service)
@@ -107,6 +116,18 @@ func main() {
                     if err != nil {
                         return err
                     }
+
+                    // open the credential store for adding the new field
+                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    if err != nil {
+                        return err
+                    }
+
+                    // add the new field to the store and error-handle
+                    if err := store.AddField(service, username, pwd) {
+                        return err
+                    }
+
                     // commit, writing the changes to the persistent store
                     if err := store.CommitStore(); err != nil {
                         return err
@@ -126,6 +147,14 @@ func main() {
                 Action: func(c *cli.Context) error {
 
                     service := c.String("service")
+                    dbname := c.String("dbname")
+
+                    // read master key for the credential store
+                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    masterkey, err := ReadKeyFromStdin()
+                    if err != nil {
+                        return err
+                    }
 
                     // read password for service and store in buffer safely
                     fmt.Printf("\t> Password for `%s` (will not be echoed): ", service)
@@ -133,6 +162,24 @@ func main() {
                     if err != nil {
                         return err
                     }
+
+                    // open the credential store for adding the new field
+                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    if err != nil {
+                        return err
+                    }
+
+                    // add the new field to the store and error-handle
+                    if err := store.RemoveField(service) {
+                        return err
+                    }
+
+                    // commit, writing the changes to the persistent store
+                    if err := store.CommitStore(); err != nil {
+                        return err
+                    }
+                    return nil
+
                     return nil
                 },
             },
@@ -167,7 +214,9 @@ func main() {
                     &cli.StringFlag{Name: "corpus", Aliases: []string{"s"}},
                 },
                 Action: func(c *cli.Context) error {
-                    fmt.Println("export")
+                    dbname := c.String("dbname")
+                    corpus := c.String("corpus")
+
                     return nil
                 },
             },
