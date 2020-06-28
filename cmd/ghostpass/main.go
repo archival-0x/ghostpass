@@ -85,10 +85,6 @@ func main() {
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
-                    // commit, writing the changes to the persistent store
-                    if err := store.CommitStore(); err != nil {
-                        return err
-                    }
                     return nil
                 },
             },
@@ -128,7 +124,15 @@ func main() {
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
                 },
                 Action: func(c *cli.Context) error {
-                    fmt.Println("rm")
+
+                    service := c.String("service")
+
+                    // read password for service and store in buffer safely
+                    fmt.Printf("\t> Password for `%s` (will not be echoed): ", service)
+                    pwd, err := ReadKeyFromStdin()
+                    if err != nil {
+                        return err
+                    }
                     return nil
                 },
             },

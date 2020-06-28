@@ -96,6 +96,7 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
 
     // TODO: destroy key
 
+
     // if not, create an empty CredentialStore
     return &CredentialStore {
         Name: name,
@@ -118,7 +119,13 @@ func (cs *CredentialStore) AddField(service string, username string, pwd *memgua
     // TODO: add in deniable key if also specified
 
     // add to mapping
-    cs.Fields[service] = field.ToCompressed()
+    service, secret, err := field.ToCompressed()
+    if err != nil {
+        return err
+    }
+
+    // set encrypted mapping between service and the cred secret it represents
+    cs.Fields[service] = secret
     return nil
 }
 
@@ -131,12 +138,13 @@ func (cs *CredentialStore) RemoveField(service string) {
 
 // given a service name as the key, reveal the contents safely for the given entry
 func (cs *CredentialStore) GetField(service string) error {
-    if val, ok := cs.Fields[service]; !ok {
+    val, ok := cs.Fields[service]
+    if !ok {
         return errors.New("Cannot find entry given the service provided")
     }
 
     // decrypt the contents of the field and return for display
-    field := FromCompressed(cs.SymmetricKey, enc_service, val)
+    field := FromCompressed(cs.SymmetricKey, service, val)
 
     // TODO
     return nil
@@ -165,6 +173,20 @@ func (cs *CredentialStore) CommitStore() error {
 // nukes the entire state of a given credential store, deleting all traces of it in-memory and
 // on the filesystem.
 func (cs *CredentialStore) DestroyStore() error {
+
+    // construct path to workspace
+    storepath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), StoragePath)
+    dbpath := fmt.Sprintf("%s/%s.gp", storepath, cs.Name);
+
+    // delete the persistent path
+    err := os.Remove(dbpath)
+    if err != nil {
+        return err
+    }
+
+    // golang garbage collection so delete in-memory struct once out of scope, but force it
+    // now anyways
+    cs = nil
     return nil
 }
 

@@ -56,6 +56,29 @@ func GCMEncrypt(enclave *memguard.Enclave, plaintext []byte) (string, error) {
 
 
 func GCMDecrypt(enclave *memguard.Enclave, ciphertext []byte) (string, error) {
+    // unseal the key and prepare the cipher
+    key, err := enclave.Open()
+    if err != nil {
+        return "", err
+    }
+
+    // initialize GCM cipher
+    block, err := aes.NewCipher(key.Bytes())
+    if err != nil {
+        return "", err
+    }
+
+    aesgcm, err := cipher.NewGCM(block)
+    if err != nil {
+        return "", err
+    }
+
+    // decrypt given the ciphertext
+    output, err := aesgcm.Open(nil, nonce, ciphertext, nil)
+    if err != nil {
+        return "", err
+    }
+
     return "", nil
 }
 
@@ -103,6 +126,11 @@ func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
 
 // after initializing an encrypted field and possibly adding a deniable secret, return
 // TODO: deal with deniable secrets
-func (f *Field) ToCompressed() string {
-    return f.Secret
+func (f *Field) ToCompressed() (string, string, error) {
+    // encrypt the `service` field, in order to remain indistinguishable
+    enc_service, err := GCMEncrypt(f.Key, []byte(f.Service))
+    if err != nil {
+        return "", "", err
+    }
+    return enc_service, f.Secret, nil
 }
