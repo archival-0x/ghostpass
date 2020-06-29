@@ -20,12 +20,19 @@ const (
 // defines a serializable credential store, which can be instantiated to securely
 // store secrets within a field of the store
 type CredentialStore struct {
-    Name string `json:"name"`
-    SymmetricKey *memguard.Enclave `json:"-"`
-    Fields map[string]string `json:"fields"`
+
+    // name identifier for the credential store
+    Name string
+
+    // represents a hashed and secured key for symmetric encryption
+    SymmetricKey *memguard.Enclave
+
+    // internal state of the store with all the available credentials and secrets
+    Fields map[string]*Field
 }
 
-// given a name to a credential store DB, check to see if it exists within the ghostpass workspace,
+
+// given a name to a credential store, check to see if it exists within the ghostpass workspace,
 // and return the serialized contents given, or else `nil` if the file is newly initialized.
 func InitPath(name string) ([]byte, error) {
 
@@ -61,6 +68,7 @@ func InitPath(name string) ([]byte, error) {
     }
 }
 
+
 // initializes a credential store given a path to the database, with appropriate
 // error-handling when necessary. Database that does not exist within workspace is initialized
 // as an empty credential store.
@@ -83,6 +91,9 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
     // lock up the new hash checksum copy
     symkey := memguard.NewBufferFromBytes(checksum[:])
 
+    // destroy original plaintext key
+    defer key.Destroy()
+
     // check if there is already existing data, and deserialize, set the hashed symmetric key
     // and return the state
     if string(data) != "" {
@@ -93,9 +104,6 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
         credstore.SymmetricKey = symkey.Seal()
         return &credstore, nil
     }
-
-    // TODO: destroy key
-
 
     // if not, create an empty CredentialStore
     return &CredentialStore {
@@ -116,53 +124,81 @@ func (cs *CredentialStore) AddField(service string, username string, pwd *memgua
         return err
     }
 
-    // TODO: add in deniable key if also specified
+    // set encrypted mapping between service and the cred secret it represents
+    cs.Fields[service] = field
+    return nil
+}
 
-    // add to mapping
-    service, secret, err := field.ToCompressed()
-    if err != nil {
-        return err
+// if configured, updates a given field with a deniable secret combination that can be decrypted if given the generated
+// deniable master key.
+func (cs *CredentialStore) AddDeniableField(service string, username string, pwd *memguard.Enclave) error {
+    // check to see if the field exists
+    field, ok := cs.Fields[service]
+    if !ok {
+        return errors.New("cannot find entry given the service name provided")
     }
 
-    // set encrypted mapping between service and the cred secret it represents
-    cs.Fields[service] = secret
+    // if exists, update it with the deniable secret
+    field.AddDeniableSecret(username, pwd)
+    cs.Fields[service] = field
     return nil
 }
 
 
-// given a service name as the key, delete the entry from the map that stores each credential field
+// given a service name as the key, delete the entire entry from the map that stores each credential field
 func (cs *CredentialStore) RemoveField(service string) error {
-    // encrypt the service field to check if within the mapping
-    enc_service, err := GCMEncrypt(cs.SymmetricKey, []byte(service))
-    if err != nil {
-        return err
-    }
+    // check to see if field exists in store
     if _, ok := cs.Fields[service]; !ok {
         return errors.New("cannot find entry given the service name provided")
     }
 
-    delete(cs.Fields, enc_service)
+    // remove the field safely by service key
+    delete(cs.Fields, service)
     return nil
 }
 
 
 // given a service name as the key, reveal the contents safely for the given entry
 func (cs *CredentialStore) GetField(service string) error {
-    // encrypt the service field to check if within the mapping
-    enc_service, err := GCMEncrypt(cs.SymmetricKey, []byte(service))
-    if err != nil {
-        return err
-    }
-    val, ok := cs.Fields[enc_service]
+    val, ok := cs.Fields[service]
     if !ok {
         return errors.New("cannot find entry given the service name provided")
     }
 
-    // decrypt the contents of the field and return for display
-    field := FromCompressed(cs.SymmetricKey, service, val)
-
-    // TODO
+    // retrieve the username and password combo and return
     return nil
+}
+
+// when exporting for plainsight distribution, this makes sure that the service
+// keys are indistinguishable if extracted
+func (cs *CredentialStore) EncryptedMarshal(compressed bool) ([]byte, error) {
+
+    // represents finalized encrypted mapping to return
+    var encfields map[string]string
+
+    // encrypt all the service keys for indistinguishability
+    for service, field := range cs.Fields {
+        // encrypt the service key to check if within the mapping
+        encservice, err := GCMEncrypt(cs.SymmetricKey, []byte(service))
+        if err != nil {
+            return nil, err
+        }
+
+        // copy the fields with encrypted service key and compressed secret
+        encfields[encservice] = field.ToCompressed()
+        delete(cs.Fields, service)
+    }
+
+    // return the finalized encrypted state
+    return json.Marshal(&struct {
+        Name string `json:"name"`
+        Fields map[string]string `json:"fields"`
+    }{
+        Name: cs.Name,
+        Fields: encfields,
+    })
+
+    // TODO: deal with compressed config
 }
 
 
@@ -209,22 +245,26 @@ func (cs *CredentialStore) DestroyStore() error {
 // and export a version of it hidden within the corpus through zero-width encoding
 func (cs *CredentialStore) Export(corpus string) (string, error) {
     // serialize structure into JSON
-    data, err := json.Marshal(cs)
+    // TODO: compressed
+    data, err := cs.EncryptedMarshal(true)
     if err != nil {
         return "", err
     }
 
-    // compression algorithm
-    // TODO
-    compressed_data := data
+    // generate compressed data
 
     // generate resultant plainsight output
-    res := EncodeHiddenString(corpus, compressed_data)
+    res := EncodeHiddenString(corpus, data)
     return res, nil
 }
 
 
-func (cs *CredentialStore) Import(key *memguard.Enclave, encoded string) error {
-    // extract out the
+func (cs *CredentialStore) Import(key *memguard.Enclave, encoded string, persist bool) error {
+    // extract out the db
+    // decompress the compressed string
+    // attempt to unmarshal into a struct
+    // set symmetric master key to struct
+    // decrypt service keys with master key
+    // if persist is set, write changes to new or existing state
     return nil
 }
