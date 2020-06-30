@@ -1,16 +1,16 @@
 package ghostpass
 
 import (
-    "strings"
-    "strconv"
+	"strconv"
+	"strings"
 )
 
 const (
-    // ZWJ represents zero-width joiner.
-    ZWJ = '\u200D'
+	// ZWJ represents zero-width joiner.
+	ZWJ = '\u200D'
 
-    // ZWNJ represents zero-width non-joiner.
-    ZWNJ = '\u200C'
+	// ZWNJ represents zero-width non-joiner.
+	ZWNJ = '\u200C'
 )
 
 // TODO: construct error
@@ -24,40 +24,40 @@ func ContainsHiddenChars(corpus string) bool {
 // given a plaintext string corpus and a secret to hide, encode it with zero-width characters
 func EncodeHiddenString(plain string, secret []byte) string {
 
-    // TODO: compress the bytes representing the secret
+	// TODO: compress the bytes representing the secret
 
-    // convert secret string into binary representation
-    var binary []byte
-    for _, c := range secret {
-        binary = strconv.AppendInt(binary, int64(c), 2)
-    }
+	// convert secret string into binary representation
+	var binary []byte
+	for _, c := range secret {
+		binary = strconv.AppendInt(binary, int64(c), 2)
+	}
 
-    // use a strings builder to push unicode characters from binary bytearray
-    var corpus strings.Builder
-    corpus.WriteString(plain)
-    for b := range binary {
-        if b == 1 {
-            corpus.WriteString(string(ZWJ))
-        } else if b == 0 {
-            corpus.WriteString(string(ZWNJ))
-        }
-    }
+	// use a strings builder to push unicode characters from binary bytearray
+	var corpus strings.Builder
+	corpus.WriteString(plain)
+	for b := range binary {
+		if b == 1 {
+			corpus.WriteString(string(ZWJ))
+		} else if b == 0 {
+			corpus.WriteString(string(ZWNJ))
+		}
+	}
 
-    // return finalized string representation
-    return corpus.String()
+	// return finalized string representation
+	return corpus.String()
 }
 
 // given a corpus string with encoded zero-width characters, find them and strip them back
 // for deserialization,
 func DecodeHiddenString(corpus string) []byte {
-    var binresult []byte
+	var binresult []byte
 
-    // iterate through corpus and parse out zero-width unicode chars
-    for _, b := range []byte(corpus) {
-        binresult = append(binresult, b)
-    }
+	// iterate through corpus and parse out zero-width unicode chars
+	for _, b := range []byte(corpus) {
+		binresult = append(binresult, b)
+	}
 
-    // decode
-    var result []byte
-    return result
+	// decode
+	var result []byte
+	return result
 }

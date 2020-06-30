@@ -15,7 +15,6 @@ import (
 
 // Helper function to safely consume an input from STDIN and store it within a memguard-ed buffer
 func ReadKeyFromStdin() (*memguard.Enclave, error) {
-
     // read a password from stdin
     pwd, err := terminal.ReadPassword(int(syscall.Stdin))
     if err != nil {
@@ -52,8 +51,6 @@ func main() {
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
-
-                    // get string flag set for dbname
                     dbname := c.String("dbname")
                     fmt.Printf("Initializing new credential store `%s`\n\n", dbname)
 
@@ -98,10 +95,9 @@ func main() {
                     &cli.StringFlag{Name: "username", Aliases: []string{"u"}},
                 },
                 Action: func(c *cli.Context) error {
-
+                    dbname := c.String("dbname")
                     service := c.String("service")
                     username := c.String("username")
-                    dbname := c.String("dbname")
 
                     // read master key for the credential store
                     fmt.Printf("\t> Master Key (will not be echoed): ")
@@ -124,7 +120,7 @@ func main() {
                     }
 
                     // add the new field to the store and error-handle
-                    if err := store.AddField(service, username, pwd) {
+                    if err := store.AddField(service, username, pwd); err != nil {
                         return err
                     }
 
@@ -145,9 +141,8 @@ func main() {
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
                 },
                 Action: func(c *cli.Context) error {
-
-                    service := c.String("service")
                     dbname := c.String("dbname")
+                    service := c.String("service")
 
                     // read master key for the credential store
                     fmt.Printf("\t> Master Key (will not be echoed): ")
@@ -156,21 +151,14 @@ func main() {
                         return err
                     }
 
-                    // read password for service and store in buffer safely
-                    fmt.Printf("\t> Password for `%s` (will not be echoed): ", service)
-                    pwd, err := ReadKeyFromStdin()
-                    if err != nil {
-                        return err
-                    }
-
-                    // open the credential store for adding the new field
+                    // open the credential store for removing the field
                     store, err := ghostpass.InitCredentialStore(dbname, masterkey)
                     if err != nil {
                         return err
                     }
 
                     // add the new field to the store and error-handle
-                    if err := store.RemoveField(service) {
+                    if err := store.RemoveField(service); err != nil {
                         return err
                     }
 
@@ -178,8 +166,6 @@ func main() {
                     if err := store.CommitStore(); err != nil {
                         return err
                     }
-                    return nil
-
                     return nil
                 },
             },
@@ -192,7 +178,29 @@ func main() {
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
                 },
                 Action: func(c *cli.Context) error {
-                    fmt.Println("view")
+                    dbname := c.String("dbname")
+                    service := c.String("service")
+
+                    // read master key for the credential store
+                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    masterkey, err := ReadKeyFromStdin()
+                    if err != nil {
+                        return err
+                    }
+
+                    // open the credential store for adding the new field
+                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    if err != nil {
+                        return err
+                    }
+
+                    // derive the combo entry from field given the service key
+                    user, pwd, err := store.GetField(service)
+                    if err != nil {
+                        return err
+                    }
+
+                    fmt.Println("{} {}", user, pwd)
                     return nil
                 },
             },
@@ -200,8 +208,31 @@ func main() {
                 Name: "import",
                 Category: "Database Distribution",
                 Usage: "imports a new password database given a plainsight file",
+                Flags: []cli.Flag{
+                    &cli.StringFlag{Name: "corpus", Aliases: []string{"s"}},
+                },
                 Action: func(c *cli.Context) error {
-                    fmt.Println("import")
+                    corpus := c.String("corpus")
+
+                    // read master key for the credential store
+                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    masterkey, err := ReadKeyFromStdin()
+                    if err != nil {
+                        return err
+                    }
+
+                    // TODO: read corpus file
+
+                    // recreate credential store given plainsight corpus
+                    store, err := ghostpass.Import(masterkey, corpus, false)
+                    if err != nil {
+                        return nil
+                    }
+
+                    // commit, writing the changes to the persistent store
+                    if err := store.CommitStore(); err != nil {
+                        return err
+                    }
                     return nil
                 },
             },
@@ -217,6 +248,29 @@ func main() {
                     dbname := c.String("dbname")
                     corpus := c.String("corpus")
 
+                    // TODO: optional file name to export it as
+
+                    // read master key for the credential store
+                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    masterkey, err := ReadKeyFromStdin()
+                    if err != nil {
+                        return err
+                    }
+
+                    // open the credential store for adding the new field
+                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    if err != nil {
+                        return err
+                    }
+
+                    // TODO: read corpus file
+
+                    // given the current state the store represents, export it as a plainsight file
+                    final, err := store.Export(corpus)
+                    if err != nil {
+                        return err
+                    }
+                    fmt.Println("{}", final)
                     return nil
                 },
             },
