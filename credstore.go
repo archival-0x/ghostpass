@@ -119,7 +119,7 @@ func InitCredentialStore(name string, pwd *memguard.Enclave) (*CredentialStore, 
 func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
 
     // initialize a new field from the given parameters
-    field, err := InitField(cs.SymmetricKey, service, username, pwd)
+    field, err := InitField(cs.SymmetricKey, username, pwd)
     if err != nil {
         return err
     }
@@ -129,6 +129,7 @@ func (cs *CredentialStore) AddField(service string, username string, pwd *memgua
     return nil
 }
 
+/*
 // if configured, updates a given field with a deniable secret combination that can be decrypted if given the generated
 // deniable master key.
 func (cs *CredentialStore) AddDeniableField(service string, username string, pwd *memguard.Enclave) error {
@@ -143,6 +144,7 @@ func (cs *CredentialStore) AddDeniableField(service string, username string, pwd
     cs.Fields[service] = field
     return nil
 }
+*/
 
 
 // given a service name as the key, delete the entire entry from the map that stores each credential field
@@ -159,19 +161,20 @@ func (cs *CredentialStore) RemoveField(service string) error {
 
 
 // given a service name as the key, reveal the contents safely for the given entry
-func (cs *CredentialStore) GetField(service string) error {
+func (cs *CredentialStore) GetField(service string) (string, *memguard.Enclave, error) {
     val, ok := cs.Fields[service]
     if !ok {
-        return errors.New("cannot find entry given the service name provided")
+        return "", nil, errors.New("cannot find entry given the service name provided")
     }
 
     // retrieve the username and password combo and return
-    return nil
+    var username string
+    return username, nil, nil
 }
 
 // when exporting for plainsight distribution, this makes sure that the service
 // keys are indistinguishable if extracted
-func (cs *CredentialStore) EncryptedMarshal(compressed bool) ([]byte, error) {
+func (cs *CredentialStore) EncryptMarshal(compressed bool) ([]byte, error) {
 
     // represents finalized encrypted mapping to return
     var encfields map[string]string
@@ -179,13 +182,13 @@ func (cs *CredentialStore) EncryptedMarshal(compressed bool) ([]byte, error) {
     // encrypt all the service keys for indistinguishability
     for service, field := range cs.Fields {
         // encrypt the service key to check if within the mapping
-        encservice, err := GCMEncrypt(cs.SymmetricKey, []byte(service))
+        encservice, err := BoxEncrypt(cs.SymmetricKey, []byte(service))
         if err != nil {
             return nil, err
         }
 
         // copy the fields with encrypted service key and compressed secret
-        encfields[encservice] = field.ToCompressed()
+        encfields[string(encservice)] = field.Secret
         delete(cs.Fields, service)
     }
 
@@ -197,8 +200,45 @@ func (cs *CredentialStore) EncryptedMarshal(compressed bool) ([]byte, error) {
         Name: cs.Name,
         Fields: encfields,
     })
+}
 
-    // TODO: deal with compressed config
+// when importing from either an exported plainsight file or an existing persistent database,
+// decrypt a JSONified string back to a `CredentialStore` given a secured symmetric key.
+func DecryptUnmarshal(enclave *memguard.Enclave, serialized []byte) (*CredentialStore, error) {
+
+    // turn the serialized JSON back into an initial state for a CredentialStore
+    var csmap struct {
+        Name string `json:"name"`
+        Fields map[string]string `json:"fields"`
+    }
+    err := json.Unmarshal(serialized, &csmap)
+    if err != nil {
+        return nil, err
+    }
+
+    // initialize new credential store
+    var cs CredentialStore;
+    cs.SymmetricKey = enclave
+
+    // create new unencrypted fields mapping
+    var fields map[string]Field
+
+    for servicekey, secret := range csmap.Fields {
+
+        // first, decrypt the encrypted service keys
+        service, err := BoxDecrypt(enclave, []byte(servicekey))
+        if err != nil {
+            return nil, err
+        }
+
+        // initialize field from compressed secret
+        field := FromCompressed(enclave, secret)
+
+        // then, decompress the string representation for secrets back into a field
+        fields[string(service)] = field
+        delete(csmap.Fields, servicekey)
+    }
+    return nil, nil
 }
 
 
@@ -246,7 +286,7 @@ func (cs *CredentialStore) DestroyStore() error {
 func (cs *CredentialStore) Export(corpus string) (string, error) {
     // serialize structure into JSON
     // TODO: compressed
-    data, err := cs.EncryptedMarshal(true)
+    data, err := cs.EncryptMarshal(true)
     if err != nil {
         return "", err
     }

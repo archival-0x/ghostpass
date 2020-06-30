@@ -12,15 +12,13 @@ import (
 // when marshaling, the `ToString()` routine is used instead to faciliate generation of the
 // final encrypted mapping
 type Field struct {
-    Key *memguard.Enclave
-    DeniableKey *memguard.Enclave
-    Service string
     Secret string
-    DeniableSecret *string
+//    DeniableSecret *string
 }
 
 
-func InitField(key *memguard.Enclave, service string, username string, pwd *memguard.Enclave) (*Field, error) {
+// given a key, service key and auth combination, create an encrypted field with an empty deniable secret parameter
+func InitField(key *memguard.Enclave, username string, pwd *memguard.Enclave) (*Field, error) {
 
     // unseal the password
     clearpwd, err := pwd.Open()
@@ -35,33 +33,37 @@ func InitField(key *memguard.Enclave, service string, username string, pwd *memg
     secretstr.WriteString(string(clearpwd.Bytes()))
 
     // encrypt the secret with the key
-    secret, err := GCMEncrypt(key, []byte(secretstr.String()))
+    secret, err := BoxEncrypt(key, []byte(secretstr.String()))
     if err != nil {
         return nil, err
     }
 
     return &Field {
-        Key: key,
-        DeniableKey: nil,
-        Service: service,
-        Secret: secret,
-        DeniableSecret: nil,
+        Secret: string(secret),
+//        DeniableSecret: nil,
     }, nil
 }
 
+
+// TODO
+// given a bogus and deniable auth combo, generate a secret like with the original pair and store it for
+// deniable key generation later.
+//func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
+//    return
+//}
+
+
+// deconstruct the secret key stored internally and return a username and password pair
+func DecryptFieldSecret(key *memguard.Enclave, secret string) (string, *memguard.Enclave, error) {
+    return "", nil, nil
+}
+
+
 // given an encrypted service parameter and compressed field string, decrypt them all
 // and reconstruct a `Field` from them.
-func FromCompressed(key *memguard.Enclave, service string, compressed string) *Field {
-    // TODO: decrypt service string
-    // TODO: defragment compressed string and decrypt
-    return nil
-}
-
-// TODO: deal with deniable secret
-func (f *Field) ToCompressed() string {
-    return f.Secret
-}
-
-func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
-    return
+func FromCompressed(key *memguard.Enclave, compressed string) Field {
+    var field Field
+    field.Secret = compressed
+    //field.DeniableSecret = nil
+    return field
 }
