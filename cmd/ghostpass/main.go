@@ -61,8 +61,10 @@ func main() {
                         return err
                     }
 
+                    // TODO: check if already exists
+
                     // create new credential store
-                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    store, err := ghostpass.InitStore(dbname, masterkey)
                     if err != nil {
                         return err
                     }
@@ -100,24 +102,26 @@ func main() {
                     username := c.String("username")
 
                     // read master key for the credential store
-                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    fmt.Printf("\n\t> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     if err != nil {
                         return err
                     }
 
                     // read password for service and store in buffer safely
-                    fmt.Printf("\t> Password for `%s` (will not be echoed): ", service)
+                    fmt.Printf("\n\t> Password for `%s` (will not be echoed): ", service)
                     pwd, err := ReadKeyFromStdin()
                     if err != nil {
                         return err
                     }
 
                     // open the credential store for adding the new field
-                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    store, err := ghostpass.InitStore(dbname, masterkey)
                     if err != nil {
                         return err
                     }
+
+                    // TODO: check if key already exists and warn user of overwrite
 
                     // add the new field to the store and error-handle
                     if err := store.AddField(service, username, pwd); err != nil {
@@ -128,6 +132,8 @@ func main() {
                     if err := store.CommitStore(); err != nil {
                         return err
                     }
+
+                    fmt.Println("\n\n[*] Successfully added field to credential store [*]")
                     return nil
                 },
             },
@@ -145,14 +151,14 @@ func main() {
                     service := c.String("service")
 
                     // read master key for the credential store
-                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    fmt.Printf("\n\t> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     if err != nil {
                         return err
                     }
 
                     // open the credential store for removing the field
-                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    store, err := ghostpass.InitStore(dbname, masterkey)
                     if err != nil {
                         return err
                     }
@@ -166,6 +172,8 @@ func main() {
                     if err := store.CommitStore(); err != nil {
                         return err
                     }
+
+                    fmt.Println("\n\n[*] Successfully removed field from credential store [*]")
                     return nil
                 },
             },
@@ -189,7 +197,7 @@ func main() {
                     }
 
                     // open the credential store for adding the new field
-                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    store, err := ghostpass.InitStore(dbname, masterkey)
                     if err != nil {
                         return err
                     }
@@ -258,7 +266,7 @@ func main() {
                     }
 
                     // open the credential store for adding the new field
-                    store, err := ghostpass.InitCredentialStore(dbname, masterkey)
+                    store, err := ghostpass.InitStore(dbname, masterkey)
                     if err != nil {
                         return err
                     }
