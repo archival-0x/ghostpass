@@ -75,7 +75,7 @@ type CredentialStore struct {
     Name string `json:"name"`
 
 	// represents a hashed and secured key for symmetric encryption
-    SymmetricKey [32]byte `json:"key"`
+    SymmetricKey []byte `json:"key"`
 
 	// internal state of the store with all the available credentials and secrets
     Fields map[string]*Field `json:"fields"`
@@ -119,6 +119,11 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 		if err := json.Unmarshal(data, &credstore); err != nil {
 			return nil, err
 		}
+
+        // TODO: check to see if checksum matches the one in store. This is only done when
+        // importing stationary states of the credential store, not exporting from a plainsight
+        // file, as there could be several deniable keys used.
+
 		return &credstore, nil
 	}
 
@@ -127,7 +132,7 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
         Version:      Version,
         StoreState:   StoreStationary,
 		Name:         name,
-		SymmetricKey: checksum,
+        SymmetricKey: checksum[:],
 		Fields:       make(map[string]*Field),
 	}, nil
 }
@@ -243,46 +248,6 @@ func (cs *CredentialStore) GetField(service string) (string, string, error) {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-// Helper routine that helps prepare a credential store to be plainsight distributable, by
-// incorporating indistinguishability to all entries, and stripping the symmetric key checksum,
-func (cs *CredentialStore) EncryptMarshal() ([]byte, error) {
-
-    // stores a final compressed mapping for the credential store's fields, where
-    // keys are encrypted for indistinguishability and a compressed form of the credential pair
-    // is also created to map against for serialization.
-	var encfields map[string]string
-
-	// encrypt all the service keys for indistinguishability
-	for service, field := range cs.Fields {
-
-		// encrypt the service key
-		encservice, err := BoxEncrypt(cs.SymmetricKey, []byte(service))
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO: if deniable secrets are found, apply one-time pad to mutate secret
-        secret := field.Secret
-
-		// store the new encrypted entry
-		encfields[string(encservice)] = secret
-	}
-
-	// return the finalized plainsight-compliant state
-	return json.Marshal(&struct {
-        Version     int               `json:"version"`
-        StoreState  string            `json:"state"`
-		Name        string            `json:"name"`
-		Fields      map[string]string `json:"fields"`
-	}{
-        Version:        Version,
-        StoreState:     StorePlainsight,
-		Name:           cs.Name,
-		Fields:         encfields,
-	})
-}
-
-
 // given a corpus to hide in, take the current state of the credential store,
 // and export a version of it hidden within the corpus through zero-width encoding
 func (cs *CredentialStore) Export(corpus string) (string, error) {
@@ -297,65 +262,6 @@ func (cs *CredentialStore) Export(corpus string) (string, error) {
 	// generate resultant plainsight output
 	res := EncodeHiddenString(corpus, data)
 	return res, nil
-}
-
-
-// when importing from either an exported plainsight file or an existing persistent database,
-// decrypt a JSONified string back to a `CredentialStore` given a secured symmetric key.
-func DecryptUnmarshal(enclave *memguard.Enclave, serialized []byte) (*CredentialStore, error) {
-
-	// turn the serialized JSON back into an initial state for a CredentialStore
-	var csmap struct {
-        Version     int               `json:"version"`
-        StoreState  string            `json:"state"`
-		Name        string            `json:"name"`
-		Fields      map[string]string `json:"fields"`
-	}
-	err := json.Unmarshal(serialized, &csmap)
-	if err != nil {
-		return nil, err
-	}
-
-    // given a secured plaintext password, unseal from secure memory, create a hash checksum from it, which
-	// can be checked against when re-opening for other credential store interactions.
-	key, err := enclave.Open()
-	if err != nil {
-		return nil, err
-	}
-
-    // initialize as SHA hash
-	checksum := sha256.Sum256(key.Bytes())
-
-	// destroy original plaintext key
-	defer key.Destroy()
-
-	// create new unencrypted fields mapping
-	var fields map[string]*Field
-
-	for servicekey, secret := range csmap.Fields {
-
-		// first, decrypt the encrypted service keys
-		service, err := BoxDecrypt(checksum, []byte(servicekey))
-		if err != nil {
-			return nil, err
-		}
-
-		// initialize field from compressed secret
-		field := FromCompressed(enclave, secret)
-
-		// then, decompress the string representation for secrets back into a field
-		fields[string(service)] = field
-		delete(csmap.Fields, servicekey)
-	}
-
-    // return the CredentialStore as if nothing changed
-	return &CredentialStore {
-        Version:        csmap.Version,
-        StoreState:     StoreStationary,
-        Name:           csmap.Name,
-        SymmetricKey:   checksum,
-        Fields:         fields,
-    }, nil
 }
 
 
