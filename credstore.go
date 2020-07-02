@@ -114,8 +114,10 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 
 	// check if there is already existing data, and deserialize, set the hashed symmetric key
 	// and return the state
-	if string(data) != "" {
+	if len(data) != 0 {
 		var credstore CredentialStore
+
+        // TODO: swap to custom marshal
 		if err := json.Unmarshal(data, &credstore); err != nil {
 			return nil, err
 		}
@@ -123,7 +125,6 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
         // TODO: check to see if checksum matches the one in store. This is only done when
         // importing stationary states of the credential store, not exporting from a plainsight
         // file, as there could be several deniable keys used.
-
 		return &credstore, nil
 	}
 
@@ -236,8 +237,25 @@ func (cs *CredentialStore) GetField(service string) (string, string, error) {
 		return "", "", errors.New("cannot find entry given the service name provided")
 	}
 
+    // unseal user and password
+    user, err := val.Username.Open()
+    if err != nil {
+        return "", "", err
+    }
+
+    pwd, err := val.Pwd.Open()
+    if err != nil {
+        return "", "", err
+    }
+
+    // decrypt password
+    pwdstr, err := BoxEncrypt(cs.SymmetricKey, pwd.Bytes())
+    if err != nil {
+        return "", "", err
+    }
+
 	// retrieve the username and password combo and return
-	return val.DecryptFieldSecret(cs.SymmetricKey)
+    return string(user.Bytes()), string(pwdstr), nil
 }
 
 
@@ -252,7 +270,7 @@ func (cs *CredentialStore) GetField(service string) (string, string, error) {
 // and export a version of it hidden within the corpus through zero-width encoding
 func (cs *CredentialStore) Export(corpus string) (string, error) {
 	// serialize structure into JSON
-	data, err := cs.EncryptMarshal()
+	data, err := cs.PlainsightMarshal()
 	if err != nil {
 		return "", err
 	}

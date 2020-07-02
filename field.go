@@ -15,12 +15,12 @@ type Field struct {
 
     // auth credentials are securely stored for fast retrieval in memory when deserialize, but
     // will never show up in persistent storage for security.
-    Username *memguard.Enclave `json:"-"`
-    Pwd *memguard.Enclave      `json:"-"`
+    Username    *memguard.Enclave      `json:"-"`
+    Pwd         *memguard.Enclave      `json:"-"`
 
     // encrypted secret of auth combo is persistently stored, and used to recover the pair
     // once deserialized back to memory securely.
-    Secret string               `json:"secret"`
+    Secret      string                 `json:"secret"`
 }
 
 
@@ -36,7 +36,7 @@ func NewField(key []byte, username string, pwd *memguard.Enclave) (*Field, error
     // symmetrically encrypt pwd once first. This ensures that it
     // does not remain plaintext even when memory-guarded, and that the user
     // can redecrypt given a master key
-    pwdstr := BoxEncrypt(key, clearpwd.Bytes())
+    pwdstr, err := BoxEncrypt(key, clearpwd.Bytes())
     if err != nil {
         return nil, err
     }
@@ -45,7 +45,7 @@ func NewField(key []byte, username string, pwd *memguard.Enclave) (*Field, error
 	var secretstr strings.Builder
 	secretstr.WriteString(username)
 	secretstr.WriteString(":")
-	secretstr.WriteString(pwdstr)
+	secretstr.WriteString(string(pwdstr))
 
 	// encrypt the secret with the key
 	secret, err := BoxEncrypt(key, []byte(secretstr.String()))
@@ -57,12 +57,14 @@ func NewField(key []byte, username string, pwd *memguard.Enclave) (*Field, error
     out := make([]byte, hex.EncodedLen(len(secret)))
     hex.Encode(out, secret)
 
-    // TODO: memguard pwdstr and username
+    // memguard pwdstr and username
+    user_enclave := memguard.NewBufferFromBytes([]byte(username))
+    pwd_enclave := memguard.NewBufferFromBytes(pwdstr)
 
 	return &Field{
-        Username:   username,
-        Pwd:        pwdstr,
-		Secret:     secret,
+        Username:   user_enclave.Seal(),
+        Pwd:        pwd_enclave.Seal(),
+		Secret:     string(secret),
 	}, nil
 }
 
@@ -76,25 +78,27 @@ func (f *Field) AddDeniableSecret(username string, pwd *memguard.Enclave) {
 
 // Given a compressed secret, reconstruct a `Field` by decrypting it with a symmetric key, and re-deriving
 // the username and password securely from them
-func ReconstructField(key *memguard.Enclave, compressed string) *Field {
+func ReconstructField(key []byte, compressed string) (*Field, error) {
 
     // decrypt the secret field in order to recover username and pwd
     plaintext, err := BoxDecrypt(key, []byte(compressed))
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	// split by by colon and return substrings
 	creds := strings.Split(string(plaintext), ":")
     user, pwd := creds[0], creds[1]
 
-    // TODO: memguard
+    // memguard username and encrypted password
+    user_enclave := memguard.NewBufferFromBytes([]byte(user))
+    pwd_enclave := memguard.NewBufferFromBytes([]byte(pwd))
 
     // we now return the reconstructed field with the cleartext username, encrypted password,
     // and a secret checksum representing their resultant encryption.
 	return &Field {
-        Username: creds[0],
-        Pwd: creds[1],
+        Username: user_enclave.Seal(),
+        Pwd: pwd_enclave.Seal(),
         Secret: compressed,
-    }
+    }, nil
 }

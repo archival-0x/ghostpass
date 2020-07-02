@@ -4,12 +4,15 @@ package ghostpass
 
 import (
     "encoding/json"
+    "crypto/sha256"
+    "github.com/awnumar/memguard"
 )
 
 
+// Helper routine that prepares a credential store for stationary storage on disk without
+// any distribution. This
 func (cs *CredentialStore) Marshal() ([]byte, error) {
-
-
+    return nil, nil
 }
 
 
@@ -95,7 +98,10 @@ func PlainsightUnmarshal(enclave *memguard.Enclave, serialized []byte) (*Credent
 		}
 
 		// reinitialize field from compressed secret
-		field := ReconstructField(enclave, secret)
+        field, err := ReconstructField(checksum[:], secret)
+        if err != nil {
+            return nil, err
+        }
 
 		// then, decompress the string representation for secrets back into a field
 		fields[string(service)] = field
