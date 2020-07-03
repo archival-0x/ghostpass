@@ -28,9 +28,6 @@ const (
 // content for initialization and interaction.
 func InitPath(name string) ([]byte, error) {
 
-	// data to be read from file that is open or initialized
-	var data []byte
-
 	// get absolute path to ghostpass workspace
 	storepath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), StoragePath)
 
@@ -39,23 +36,33 @@ func InitPath(name string) ([]byte, error) {
 		os.Mkdir(storepath, os.ModePerm)
 	}
 
-	// initialize path to database, open/create it, and return the contents
+	// initialize path to database, return empty buffer
 	dbpath := fmt.Sprintf("%s/%s.gp", storepath, name)
+
+    // create new database if path doesn't exist
 	if _, err := os.Stat(dbpath); os.IsNotExist(err) {
 
-		// open file with flags to create if not found
-		file, err := os.OpenFile(dbpath, os.O_RDWR|os.O_CREATE, 0755)
+		// create empty file if not found
+		file, err := os.Create(dbpath)
 		if err != nil {
-			return data, err
+			return nil, err
 		}
+        file.Close()
 
-		// read contents from file, regardless of what is in it
-		if _, err := file.Read(data); err != nil {
-			return data, err
-		}
+        // return empty buffer
+        var data []byte
 		return data, nil
 
+    // open and return existing content if exists
 	} else {
+
+        // open file for reading
+        data, err := ioutil.ReadFile(dbpath)
+        if err != nil {
+            return nil, err
+        }
+
+        // return buffer of contents from file
 		return data, err
 	}
 }
@@ -75,7 +82,7 @@ type CredentialStore struct {
     Name string `json:"name"`
 
 	// represents a hashed and secured key for symmetric encryption
-    SymmetricKey []byte `json:"key"`
+    SymmetricKey []byte `json:"-"`
 
 	// internal state of the store with all the available credentials and secrets
     Fields map[string]*Field `json:"fields"`
@@ -115,17 +122,13 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 	// check if there is already existing data, and deserialize, set the hashed symmetric key
 	// and return the state
 	if len(data) != 0 {
-		var credstore CredentialStore
 
-        // TODO: swap to custom marshal
-		if err := json.Unmarshal(data, &credstore); err != nil {
-			return nil, err
-		}
-
-        // TODO: check to see if checksum matches the one in store. This is only done when
-        // importing stationary states of the credential store, not exporting from a plainsight
-        // file, as there could be several deniable keys used.
-		return &credstore, nil
+        // use custom marshal to rederive fields
+        credstore, err := StationaryUnmarshal(checksum, data)
+        if err != nil {
+            return nil, err
+        }
+		return credstore, nil
 	}
 
 	// if not, create an empty CredentialStore
@@ -249,7 +252,7 @@ func (cs *CredentialStore) GetField(service string) (string, string, error) {
     }
 
     // decrypt password
-    pwdstr, err := BoxEncrypt(cs.SymmetricKey, pwd.Bytes())
+    pwdstr, err := BoxDecrypt(cs.SymmetricKey, pwd.Bytes())
     if err != nil {
         return "", "", err
     }
