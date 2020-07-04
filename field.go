@@ -21,7 +21,7 @@ type Field struct {
 
     // encrypted secret of auth combo is persistently stored, and used to recover the pair
     // once deserialized back to memory securely.
-    Secret      []byte                 `json:"secret"`
+    AuthPair    []byte                 `json:"authpair"`
 }
 
 
@@ -34,6 +34,7 @@ func NewField(key []byte, username string, pwd *memguard.Enclave) (*Field, error
 		return nil, err
 	}
 
+    /* TODO
     // symmetrically encrypt pwd once first. This ensures that it
     // does not remain plaintext even when memory-guarded, and that the user
     // can redecrypt given a master key
@@ -41,13 +42,13 @@ func NewField(key []byte, username string, pwd *memguard.Enclave) (*Field, error
     if err != nil {
         return nil, err
     }
+    */
 
     // initialize the secret by concating: `username:pwdstr`. Manually encode pwdstr
 	var secretstr strings.Builder
 	secretstr.WriteString(username)
 	secretstr.WriteString(":")
-    secretstr.WriteString(string(pwdstr))
-	//secretstr.WriteString(base64.StdEncoding.EncodeToString([]byte(pwdstr)))
+    secretstr.WriteString(string(clearpwd.Bytes()))
 
 	// encrypt the secret with the key
 	secret, err := BoxEncrypt(key, []byte(secretstr.String()))
@@ -61,12 +62,12 @@ func NewField(key []byte, username string, pwd *memguard.Enclave) (*Field, error
 
     // memguard pwdstr and username
     user_enclave := memguard.NewBufferFromBytes([]byte(username))
-    pwd_enclave := memguard.NewBufferFromBytes(pwdstr)
+    //pwd_enclave := memguard.NewBufferFromBytes(pwdstr)
 
 	return &Field{
         Username:   user_enclave.Seal(),
-        Pwd:        pwd_enclave.Seal(),
-		Secret:     secret,
+        Pwd:        pwd,
+		AuthPair:   secret,
 	}, nil
 }
 
@@ -78,7 +79,7 @@ func ReconstructField(key []byte, compressed []byte) (*Field, error) {
 
     // create empty field, and partially initialize
     var field *Field
-    field.Secret = compressed
+    field.AuthPair = compressed
 
     // rederive auth pair with symmetric key
     err := field.RederiveAuthPair(key)
@@ -96,12 +97,12 @@ func ReconstructField(key []byte, compressed []byte) (*Field, error) {
 func (f *Field) RederiveAuthPair(key []byte) error {
 
     // sanity checks
-    if f.Secret == nil {
+    if f.AuthPair == nil {
         return errors.New("No secret in field")
     }
 
     // decrypt the secret field in order to recover username and pwd
-    plaintext, err := BoxDecrypt(key, f.Secret)
+    plaintext, err := BoxDecrypt(key, f.AuthPair)
 	if err != nil {
 		return err
 	}

@@ -24,47 +24,26 @@ const (
 )
 
 
-// Helper routine that helps check for the existence to the credential store path, and reads its
-// content for initialization and interaction.
-func InitPath(name string) ([]byte, error) {
-
-	// get absolute path to ghostpass workspace
+// Helper routine to construct path to a ghostpass workspace for storage
+// if not found in filesystem, and returns name
+func MakeWorkspace() string {
+    // get absolute path to ghostpass workspace
 	storepath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), StoragePath)
 
 	// check if storage path exists, if not, create
 	if _, err := os.Stat(storepath); os.IsNotExist(err) {
 		os.Mkdir(storepath, os.ModePerm)
 	}
+    return storepath
+}
 
-	// initialize path to database, return empty buffer
-	dbpath := fmt.Sprintf("%s/%s.gp", storepath, name)
 
-    // create new database if path doesn't exist
-	if _, err := os.Stat(dbpath); os.IsNotExist(err) {
-
-		// create empty file if not found
-		file, err := os.Create(dbpath)
-		if err != nil {
-			return nil, err
-		}
-        file.Close()
-
-        // return empty buffer
-        var data []byte
-		return data, nil
-
-    // open and return existing content if exists
-	} else {
-
-        // open file for reading
-        data, err := ioutil.ReadFile(dbpath)
-        if err != nil {
-            return nil, err
-        }
-
-        // return buffer of contents from file
-		return data, err
-	}
+// Helper routine to check if a given path exists.
+func PathExists(path string) bool {
+    if _, err := os.Stat(path); os.IsNotExist(err) {
+        return false
+    }
+    return true
 }
 
 
@@ -100,11 +79,18 @@ type CredentialStore struct {
 // create a new store if name does not exist, otherwise will read and return the existing one.
 func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 
-	// given a name to a db, open/create it from the workspace, and read bytes for serialization
-	data, err := InitPath(name)
+    // initialize path to database, return empty buffer
+	dbpath := fmt.Sprintf("%s/%s.gp", MakeWorkspace(), name)
+    if PathExists(dbpath) {
+        return nil, errors.New("Credential store already exists")
+    }
+
+	// create empty file
+	file, err := os.Create(dbpath)
 	if err != nil {
-		return nil, err
+        return nil, err
 	}
+    file.Close()
 
 	// given a secured plaintext password, unseal from secure memory, create a hash checksum from it, which
 	// can be checked against when re-opening for other credential store interactions.
@@ -119,18 +105,6 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 	// destroy original plaintext key
 	defer key.Destroy()
 
-	// check if there is already existing data, and deserialize, set the hashed symmetric key
-	// and return the state
-	if len(data) != 0 {
-
-        // use custom marshal to rederive fields
-        credstore, err := StationaryUnmarshal(checksum, data)
-        if err != nil {
-            return nil, err
-        }
-		return credstore, nil
-	}
-
 	// if not, create an empty CredentialStore
 	return &CredentialStore{
         Version:      Version,
@@ -139,6 +113,44 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
         SymmetricKey: checksum[:],
 		Fields:       make(map[string]*Field),
 	}, nil
+}
+
+
+// Opens an existing `CredentialStore` for interaction by the user. Will error if does not
+// exist or cannot properly read and deserialize the contents of the persistent database.
+func OpenStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
+
+    // check if store doesn't exist
+	dbpath := fmt.Sprintf("%s/%s.gp", MakeWorkspace(), name)
+    if !PathExists(dbpath) {
+        return nil, errors.New("Credential store does not exist. Create before opening.")
+    }
+    // given a name to a db, create it from the workspace, and read bytes for serialization
+    // open file for reading
+    data, err := ioutil.ReadFile(dbpath)
+    if err != nil {
+        return nil, err
+    }
+
+    // given a secured plaintext password, unseal from secure memory, create a hash checksum from it, which
+	// can be checked against when re-opening for other credential store interactions.
+	key, err := pwd.Open()
+	if err != nil {
+		return nil, err
+	}
+
+    // initialize as SHA hash
+	checksum := sha256.Sum256(key.Bytes())
+
+	// destroy original plaintext key
+	defer key.Destroy()
+
+    // use custom marshal to rederive fields
+    credstore, err := StationaryUnmarshal(checksum, data)
+    if err != nil {
+        return nil, err
+    }
+	return credstore, nil
 }
 
 
@@ -188,6 +200,14 @@ func (cs *CredentialStore) CommitStore() error {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
+// Helper routine used to check if a field with a specific service already exists.
+func (cs *CredentialStore) FieldExists(service string) bool {
+    if _, ok := cs.Fields[service]; !ok {
+        return false
+    }
+    return true
+}
+
 // Add a new field to the credential store, given a service as key, and a credential pair for
 // encryption and storage. Will overwrite if already exists.
 func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
@@ -207,8 +227,7 @@ func (cs *CredentialStore) AddField(service string, username string, pwd *memgua
 // plausible deniability. (TODO)
 func (cs *CredentialStore) AddDeniableField(service string, username string, pwd *memguard.Enclave) error {
     // check to see if the field exists
-    _, ok := cs.Fields[service]
-    if !ok {
+    if !cs.FieldExists(service) {
         return errors.New("cannot find entry given the service name provided")
     }
 
@@ -223,7 +242,7 @@ func (cs *CredentialStore) AddDeniableField(service string, username string, pwd
 // Given a service name as the key, delete an entry corresponding to it in the credential store.
 func (cs *CredentialStore) RemoveField(service string) error {
 	// check to see if field exists in store
-	if _, ok := cs.Fields[service]; !ok {
+    if !cs.FieldExists(service) {
 		return errors.New("cannot find entry given the service name provided")
 	}
 
@@ -235,10 +254,11 @@ func (cs *CredentialStore) RemoveField(service string) error {
 
 // Given a service name as the key, reveal the contents safely for the given entry.
 func (cs *CredentialStore) GetField(service string) (string, string, error) {
-	val, ok := cs.Fields[service]
-	if !ok {
+    if !cs.FieldExists(service) {
 		return "", "", errors.New("cannot find entry given the service name provided")
 	}
+
+    val := cs.Fields[service]
 
     // unseal user and password
     user, err := val.Username.Open()
@@ -251,11 +271,14 @@ func (cs *CredentialStore) GetField(service string) (string, string, error) {
         return "", "", err
     }
 
+    /*
     // decrypt password
     pwdstr, err := BoxDecrypt(cs.SymmetricKey, pwd.Bytes())
     if err != nil {
         return "", "", err
     }
+    */
+    pwdstr := pwd.Bytes()
 
 	// retrieve the username and password combo and return
     return string(user.Bytes()), string(pwdstr), nil

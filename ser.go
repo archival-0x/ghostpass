@@ -112,7 +112,7 @@ func (cs *CredentialStore) PlainsightMarshal() ([]byte, error) {
 		}
 
 		// TODO: if deniable secrets are found, apply one-time pad to mutate secret
-        secret := field.Secret
+        secret := field.AuthPair
 
 		// store the new encrypted entry
 		encfields[string(encservice)] = secret
