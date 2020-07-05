@@ -7,8 +7,8 @@ import (
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
-// given a sealed symmetric key and a plaintext byte array, encrypt it using
-// the Nacl secretbox API, which provides authenticated encryption
+// Use symmetric authenticated encryption to generate a ciphertext given
+// any plaintext byte buffer.
 func BoxEncrypt(key []byte, plaintext []byte) ([]byte, error) {
     if len(key) != 32 {
         return nil, errors.New("")
@@ -25,6 +25,9 @@ func BoxEncrypt(key []byte, plaintext []byte) ([]byte, error) {
 	return secretbox.Seal(nonce[:], plaintext, &nonce, keyptr), nil
 }
 
+
+// Use symmetric authenticated encryption to decrypt a plaintext from a ciphertext
+// given a ciphertext byte buffer.
 func BoxDecrypt(key []byte, ciphertext []byte) ([]byte, error) {
     if len(key) != 32 {
         return nil, errors.New("")

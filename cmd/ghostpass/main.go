@@ -55,6 +55,7 @@ func main() {
 /_____/      \/           \/       |__|       \/     \/     \/
 
         %s
+
 `, Description)
     app := &cli.App {
         Name: "ghostpass",
@@ -127,7 +128,7 @@ func main() {
                     // ask for user confirmation
 					prompt := promptui.Select{
 						Label: `Are you SURE you want to do this? The credential store will be
-                    	permanently deleted on this host? (y/N): `,
+                    	permanently deleted on this host.`,
 						Items: []string{"Yes", "No"},
 					}
 					_, result, err := prompt.Run()
@@ -157,8 +158,19 @@ func main() {
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
+                    if dbname == "" {
+                        return errors.New("Name to credential store not specified.")
+                    }
+
                     service := c.String("service")
+                    if service == "" {
+                        return errors.New("Name of service to add not specified.")
+                    }
+
                     username := c.String("username")
+                    if username == "" {
+                        return errors.New("Username for service to add not specified.")
+                    }
 
                     // read master key for the credential store
                     fmt.Printf("\n\t> Master Key (will not be echoed): ")
@@ -224,7 +236,14 @@ func main() {
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
+                    if dbname == "" {
+                        return errors.New("Name to credential store not specified.")
+                    }
+
                     service := c.String("service")
+                    if service == "" {
+                        return errors.New("Name of service to add not specified.")
+                    }
 
                     // read master key for the credential store
                     fmt.Printf("\n\t> Master Key (will not be echoed): ")
@@ -266,7 +285,14 @@ func main() {
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
+                    if dbname == "" {
+                        return errors.New("Name to credential store not specified.")
+                    }
+
                     service := c.String("service")
+                    if service == "" {
+                        return errors.New("Name of service to add not specified.")
+                    }
 
                     // read master key for the credential store
                     fmt.Printf("\n\t> Master Key (will not be echoed): ")
@@ -302,6 +328,9 @@ func main() {
                 },
                 Action: func(c *cli.Context) error {
                     corpus := c.String("corpus")
+                    if corpus == "" {
+                        return errors.New("No corpus provided for plainsight decoding.")
+                    }
 
                     // read master key for the credential store
                     fmt.Printf("\t> Master Key (will not be echoed): ")
@@ -336,7 +365,14 @@ func main() {
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
+                    if dbname == "" {
+                        return errors.New("Name to credential store not specified.")
+                    }
+
                     corpus := c.String("corpus")
+                    if corpus == "" {
+                        return errors.New("No corpus provided for plainsight encoding.")
+                    }
 
                     // TODO: optional file name to export it as
 
