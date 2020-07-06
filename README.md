@@ -4,6 +4,12 @@ Secrets manager cryptosystem that enables users to distribute sensitive secrets 
 
 > WIP!
 
+## Project Roadmap
+
+* [x] Plainsight Distribution
+* [ ] Plausible deniability
+* [ ] Keybase filesystem integration
+
 ## Introduction
 
 __Ghostpass__ is a secrets management cryptography scheme that can hide encrypted secrets in cleartext for the purpose of distribution across public mediums. It ensures that your secrets, whether in the form of authentication credentials or actual documentation, can appear in plainsight as normal cleartexts, and can be confidently transmitted even in a public medium with potential malicious actors, even those that may act out with coercion.

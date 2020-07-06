@@ -10,6 +10,7 @@ import (
     "syscall"
 
     "github.com/urfave/cli/v2"
+    "github.com/fatih/color"
     "github.com/manifoldco/promptui"
     "github.com/awnumar/memguard"
     "golang.org/x/crypto/ssh/terminal"
@@ -79,7 +80,9 @@ func main() {
                     if dbname == "" {
                         return errors.New("Name to credential store not specified")
                     }
-                    fmt.Printf("Initializing new credential store `%s`\n\n", dbname)
+
+                    col := color.New(color.FgWhite).Add(color.Bold)
+                    col.Printf("\n[*] Initializing new credential store `%s` [*]\n\n", dbname)
 
                     // read master key and store in buffer safely
                     fmt.Printf("> Master Key (will not be echoed): ")
@@ -100,7 +103,8 @@ func main() {
                         return err
                     }
 
-                    fmt.Println("Successfully initialized new credential store", dbname)
+                    col = color.New(color.FgGreen).Add(color.Bold)
+                    col.Println("[*] Successfully initialized new credential store. [*]")
                     return nil
                 },
             },
@@ -117,8 +121,11 @@ func main() {
                         return errors.New("Name to credential store not specified.")
                     }
 
+                    col := color.New(color.FgWhite).Add(color.Bold)
+                    col.Printf("\n[*] Destroying credential store `%s` [*]\n\n", dbname)
+
                     // read master key for the credential store
-                    fmt.Printf("\n> Master Key (will not be echoed): ")
+                    fmt.Printf("> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
                     if err != nil {
@@ -131,10 +138,11 @@ func main() {
                         return err
                     }
 
+                    fmt.Println()
+
                     // ask for user confirmation
 					prompt := promptui.Select{
-						Label: `Are you SURE you want to do this? The credential store will be
-                    	permanently deleted on this host.`,
+						Label: "Are you SURE you want to do this? You will NOT be able to go back",
 						Items: []string{"Yes", "No"},
 					}
 					_, result, err := prompt.Run()
@@ -151,14 +159,15 @@ func main() {
 
                     // nuke!
                     store.DestroyStore()
-                    fmt.Println("Successfully nuked the credential store! Poof!")
+                    col = color.New(color.FgGreen).Add(color.Bold)
+                    col.Println("[*] Successfully nuked the credential store! Poof! [*]")
                     return nil
                 },
             },
             {
                 Name: "add",
                 Category: "Operations",
-                Usage: "add a new field to the credential store",
+                Usage: "add a new field to the credential store, will overwrite if exists",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
@@ -169,6 +178,9 @@ func main() {
                     if dbname == "" {
                         return errors.New("Name to credential store not specified.")
                     }
+
+                    col := color.New(color.FgWhite).Add(color.Bold)
+                    col.Printf("\n[*] Adding field entry to credential store `%s` [*]\n", dbname)
 
                     // read master key for the credential store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
@@ -244,7 +256,8 @@ func main() {
                         return err
                     }
 
-                    fmt.Println("[*] Successfully added field to credential store [*]")
+                    col = color.New(color.FgGreen).Add(color.Bold)
+                    col.Println("[*] Successfully nuked the credential store! Poof! [*]")
                     return nil
                 },
             },
