@@ -4,14 +4,17 @@ import (
     "os"
     "log"
     "fmt"
+    "bufio"
+    "strings"
     "errors"
     "syscall"
 
     "github.com/urfave/cli/v2"
     "github.com/manifoldco/promptui"
     "github.com/awnumar/memguard"
-    "github.com/ex0dus-0x/ghostpass"
     "golang.org/x/crypto/ssh/terminal"
+    "github.com/olekukonko/tablewriter"
+    "github.com/ex0dus-0x/ghostpass"
 )
 
 const (
@@ -162,18 +165,8 @@ func main() {
                         return errors.New("Name to credential store not specified.")
                     }
 
-                    service := c.String("service")
-                    if service == "" {
-                        return errors.New("Name of service to add not specified.")
-                    }
-
-                    username := c.String("username")
-                    if username == "" {
-                        return errors.New("Username for service to add not specified.")
-                    }
-
                     // read master key for the credential store
-                    fmt.Printf("\n\t> Master Key (will not be echoed): ")
+                    fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
                     if err != nil {
@@ -186,13 +179,38 @@ func main() {
                         return err
                     }
 
+                    // get service if not specified in args
+                    service := c.String("service")
+                    if service == "" {
+                        reader := bufio.NewReader(os.Stdin)
+                        fmt.Print("> Service: ")
+                        text, err := reader.ReadString('\n')
+                        if err != nil {
+                            return err
+                        }
+                        service = text
+                    }
+
+                    // get username if not specified in args
+                    username := c.String("username")
+                    if username == "" {
+                        reader := bufio.NewReader(os.Stdin)
+                        fmt.Print("> Username: ")
+                        text, err := reader.ReadString('\n')
+                        if err != nil {
+                            return err
+                        }
+                        service = text
+                    }
+
                     // read password for service and store in buffer safely
-                    fmt.Printf("\t> Password for `%s` (will not be echoed): ", service)
+                    fmt.Printf("> Password for `%s` (will not be echoed): ", strings.TrimSuffix(service, "\n"))
                     pwd, err := ReadKeyFromStdin()
-                    fmt.Printf("\n\n")
                     if err != nil {
                         return err
                     }
+
+                    fmt.Printf("\n\n")
 
                     // check if key already exists and warn user of overwrite
                     if store.FieldExists(service) {
@@ -206,7 +224,7 @@ func main() {
                         }
 
                         if result != "Yes" {
-                            fmt.Println("\n\nExiting...")
+                            fmt.Println("Exiting...")
                             return nil
                         }
                     }
@@ -221,7 +239,7 @@ func main() {
                         return err
                     }
 
-                    fmt.Println("\n[*] Successfully added field to credential store [*]")
+                    fmt.Println("[*] Successfully added field to credential store [*]")
                     return nil
                 },
             },
@@ -240,26 +258,33 @@ func main() {
                         return errors.New("Name to credential store not specified.")
                     }
 
-                    service := c.String("service")
-                    if service == "" {
-                        return errors.New("Name of service to add not specified.")
-                    }
-
                     // read master key for the credential store
-                    fmt.Printf("\n\t> Master Key (will not be echoed): ")
+                    fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
                     if err != nil {
                         return err
                     }
 
-                    fmt.Println()
-
                     // open the credential store for removing the field
                     store, err := ghostpass.OpenStore(dbname, masterkey)
                     if err != nil {
                         return err
                     }
+
+                    // get service if not specified in args
+                    service := c.String("service")
+                    if service == "" {
+                        reader := bufio.NewReader(os.Stdin)
+                        fmt.Print("> Service: ")
+                        text, err := reader.ReadString('\n')
+                        if err != nil {
+                            return err
+                        }
+                        service = text
+                    }
+
+                    fmt.Println()
 
                     // add the new field to the store and error-handle
                     if err := store.RemoveField(service); err != nil {
@@ -271,7 +296,7 @@ func main() {
                         return err
                     }
 
-                    fmt.Println("\n\n[*] Successfully removed field from credential store [*]")
+                    fmt.Println("[*] Successfully removed field from credential store [*]")
                     return nil
                 },
             },
@@ -289,13 +314,8 @@ func main() {
                         return errors.New("Name to credential store not specified.")
                     }
 
-                    service := c.String("service")
-                    if service == "" {
-                        return errors.New("Name of service to add not specified.")
-                    }
-
                     // read master key for the credential store
-                    fmt.Printf("\n\t> Master Key (will not be echoed): ")
+                    fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
                     if err != nil {
@@ -308,14 +328,33 @@ func main() {
                         return err
                     }
 
+                    // get service if not specified in args
+                    service := c.String("service")
+                    if service == "" {
+                        reader := bufio.NewReader(os.Stdin)
+                        fmt.Print("> Service: ")
+                        text, err := reader.ReadString('\n')
+                        if err != nil {
+                            return err
+                        }
+                        service = text
+                    }
+                    fmt.Println()
+
                     // derive the combo entry from field given the service key
-                    user, pwd, err := store.GetField(service)
+                    combo, err := store.GetField(service)
                     if err != nil {
                         return err
                     }
+                    fmt.Println()
 
-                    // TODO: ascii table
-                    fmt.Printf("\n| %s : %s |\n", user, pwd)
+                    // output ascii table
+                    table := tablewriter.NewWriter(os.Stdout)
+                    table.SetHeader([]string{"Service", "Username", "Password"})
+                    table.SetAutoMergeCells(true)
+                    table.SetRowLine(true)
+                    table.Append(combo)
+                    table.Render()
                     return nil
                 },
             },

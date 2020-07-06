@@ -253,9 +253,9 @@ func (cs *CredentialStore) RemoveField(service string) error {
 
 
 // Given a service name as the key, reveal the contents safely for the given entry.
-func (cs *CredentialStore) GetField(service string) (string, string, error) {
+func (cs *CredentialStore) GetField(service string) ([]string, error) {
     if !cs.FieldExists(service) {
-		return "", "", errors.New("cannot find entry given the service name provided")
+		return nil, errors.New("cannot find entry given the service name provided")
 	}
 
     val := cs.Fields[service]
@@ -263,25 +263,29 @@ func (cs *CredentialStore) GetField(service string) (string, string, error) {
     // unseal user and password
     user, err := val.Username.Open()
     if err != nil {
-        return "", "", err
+        return nil, err
     }
 
     pwd, err := val.Pwd.Open()
     if err != nil {
-        return "", "", err
+        return nil, err
     }
 
     /*
     // decrypt password
     pwdstr, err := BoxDecrypt(cs.SymmetricKey, pwd.Bytes())
     if err != nil {
-        return "", "", err
+        return nil, err
     }
     */
     pwdstr := pwd.Bytes()
 
-	// retrieve the username and password combo and return
-    return string(user.Bytes()), string(pwdstr), nil
+    // concatenate slice with parameters for output
+    var combo []string
+    combo = append(combo, service)
+    combo = append(combo, string(user.Bytes()))
+    combo = append(combo, string(pwdstr))
+    return combo, nil
 }
 
 
