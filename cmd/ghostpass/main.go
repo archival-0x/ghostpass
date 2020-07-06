@@ -9,6 +9,7 @@ import (
     "errors"
     "syscall"
     "io/ioutil"
+    "path/filepath"
 
     "github.com/urfave/cli/v2"
     "github.com/fatih/color"
@@ -119,7 +120,7 @@ func main() {
                 Usage: "List existing secret credential stores",
                 Action: func(c *cli.Context) error {
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Println("\n[*] Listing all available credential stores [*]")
+                    col.Println("\n[*] Listing all available credential stores [*]\n")
 
                     files, err := ioutil.ReadDir(ghostpass.MakeWorkspace())
                     if err != nil {
@@ -127,7 +128,10 @@ func main() {
                     }
 
                     for _, f := range files {
-                        fmt.Println(f.Name())
+                        dbname := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
+                        col := color.New(color.Underline).Add(color.Bold)
+                        fmt.Printf("\t* ")
+                        col.Println(dbname)
                     }
                     fmt.Println()
                     return nil
@@ -449,12 +453,12 @@ func main() {
                 Category: "Distribution",
                 Usage: "Imports a new password database given a plainsight file",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "corpus", Aliases: []string{"s"}},
+                    &cli.StringFlag{Name: "corpus", Aliases: []string{"c"}},
                 },
                 Action: func(c *cli.Context) error {
                     corpus := c.String("corpus")
                     if corpus == "" {
-                        return errors.New("No corpus provided for plainsight decoding.")
+                        return errors.New("No path to corpus provided for plainsight decoding.")
                     }
 
                     // read master key for the credential store
@@ -466,9 +470,13 @@ func main() {
                     }
 
                     // TODO: read corpus file
+                    corpusdata, err := ioutil.ReadFile(corpus)
+                    if err != nil {
+                        return err
+                    }
 
                     // recreate credential store given plainsight corpus
-                    store, err := ghostpass.Import(masterkey, corpus, false)
+                    store, err := ghostpass.Import(masterkey, string(corpusdata), false)
                     if err != nil {
                         return err
                     }
@@ -486,7 +494,7 @@ func main() {
                 Usage: "Generates a plainsight file for distribution from current state",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.StringFlag{Name: "corpus", Aliases: []string{"s"}},
+                    &cli.StringFlag{Name: "corpus", Aliases: []string{"c"}},
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")

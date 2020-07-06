@@ -59,7 +59,6 @@ func PlainsightUnmarshal(checksum [32]byte, serialized []byte) (*CredentialStore
 		return nil, err
 	}
 
-
     // create new semi-unencrypted mapping
 	var fields map[string]*Field
 
