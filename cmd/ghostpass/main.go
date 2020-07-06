@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	Description string = "Privacy-Centric Secrets Manager Cryptosystem"
+	Description string = "Privacy-First Secrets Management Cryptosystem"
 )
 
 
