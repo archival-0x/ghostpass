@@ -193,7 +193,7 @@ func main() {
                         if err != nil {
                             return err
                         }
-                        service = text
+                        service = strings.TrimSuffix(text, "\n")
                     }
 
                     // get username if not specified in args
@@ -205,11 +205,11 @@ func main() {
                         if err != nil {
                             return err
                         }
-                        service = text
+                        username = strings.TrimSuffix(text, "\n")
                     }
 
                     // read password for service and store in buffer safely
-                    fmt.Printf("> Password for `%s` (will not be echoed): ", strings.TrimSuffix(service, "\n"))
+                    fmt.Printf("> Password for `%s` (will not be echoed): ", service)
                     pwd, err := ReadKeyFromStdin()
                     if err != nil {
                         return err
@@ -286,7 +286,7 @@ func main() {
                         if err != nil {
                             return err
                         }
-                        service = text
+                        service = strings.TrimSuffix(text, "\n")
                     }
 
                     fmt.Println()
@@ -342,7 +342,7 @@ func main() {
                         if err != nil {
                             return err
                         }
-                        service = text
+                        service = strings.TrimSuffix(text, "\n")
                     }
                     fmt.Println()
 
@@ -351,7 +351,6 @@ func main() {
                     if err != nil {
                         return err
                     }
-                    fmt.Println()
 
                     // output ascii table
                     table := tablewriter.NewWriter(os.Stdout)
@@ -389,7 +388,7 @@ func main() {
                     // recreate credential store given plainsight corpus
                     store, err := ghostpass.Import(masterkey, corpus, false)
                     if err != nil {
-                        return nil
+                        return err
                     }
 
                     // commit, writing the changes to the persistent store
