@@ -57,9 +57,12 @@ func main() {
  \___  /|___|  /\____/____  > |__| |   __(____  /____  >____  >
 /_____/      \/           \/       |__|       \/     \/     \/
 
-        %s
+        >> Version: 2.0
+        >> %s
 
 `, Description)
+
+    // TODO: commands: `stores`, `fields`
     app := &cli.App {
         Name: "ghostpass",
         Usage: Description,
@@ -139,14 +142,16 @@ func main() {
                         return err
 					}
 
+                    fmt.Println()
+
                     if result != "Yes" {
-                        fmt.Println("\n\nExiting...")
+                        fmt.Println("Exiting...")
                         return nil
                     }
 
                     // nuke!
                     store.DestroyStore()
-                    fmt.Println("\n\nSuccessfully nuked the credential store! Poof!")
+                    fmt.Println("Successfully nuked the credential store! Poof!")
                     return nil
                 },
             },
