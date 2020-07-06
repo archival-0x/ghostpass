@@ -8,6 +8,7 @@ import (
     "strings"
     "errors"
     "syscall"
+    "io/ioutil"
 
     "github.com/urfave/cli/v2"
     "github.com/fatih/color"
@@ -19,8 +20,25 @@ import (
 )
 
 const (
-	Description string = "Secrets manager cryptosystem with plainsight distribution"
+	Description string = "Privacy-Centric Secrets Manager Cryptosystem"
 )
+
+
+// Helper for displaying banner. TODO: quiet down if set
+func Banner() {
+    color.Blue(`
+        .__                    __
+   ____ |  |__   ____  _______/  |____________    ______ ______
+  / ___\|  |  \ /  _ \/  ___/\   __\____ \__  \  /  ___//  ___/
+ / /_/  >   Y  (  <_> )___ \  |  | |  |_> > __ \_\___ \ \___ \
+ \___  /|___|  /\____/____  > |__| |   __(____  /____  >____  >
+/_____/      \/           \/       |__|       \/     \/     \/
+
+`)
+    col := color.New(color.FgWhite).Add(color.Underline)
+    col.Printf("\t>> Version: 2.0\n\t>> https://ghostpass.codemuch.tech/\n\t>> %s\n\n", Description)
+}
+
 
 // Helper function to safely consume an input from STDIN and store it within a memguard-ed buffer
 func ReadKeyFromStdin() (*memguard.Enclave, error) {
@@ -50,20 +68,7 @@ func init() {
 
 
 func main() {
-    fmt.Printf(`
-        .__                    __
-   ____ |  |__   ____  _______/  |____________    ______ ______
-  / ___\|  |  \ /  _ \/  ___/\   __\____ \__  \  /  ___//  ___/
- / /_/  >   Y  (  <_> )___ \  |  | |  |_> > __ \_\___ \ \___ \
- \___  /|___|  /\____/____  > |__| |   __(____  /____  >____  >
-/_____/      \/           \/       |__|       \/     \/     \/
-
-        >> Version: 2.0
-        >> %s
-
-`, Description)
-
-    // TODO: commands: `stores`, `fields`
+    Banner()
     app := &cli.App {
         Name: "ghostpass",
         Usage: Description,
@@ -109,9 +114,29 @@ func main() {
                 },
             },
             {
+                Name: "stores",
+                Category: "Initialization",
+                Usage: "List existing secret credential stores",
+                Action: func(c *cli.Context) error {
+                    col := color.New(color.FgWhite).Add(color.Bold)
+                    col.Println("\n[*] Listing all available credential stores [*]")
+
+                    files, err := ioutil.ReadDir(ghostpass.MakeWorkspace())
+                    if err != nil {
+                        return err
+                    }
+
+                    for _, f := range files {
+                        fmt.Println(f.Name())
+                    }
+                    fmt.Println()
+                    return nil
+                },
+            },
+            {
                 Name: "destruct",
                 Category: "Initialization",
-                Usage: "completely nuke a credential store given its name",
+                Usage: "Completely nuke a credential store given its name",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
@@ -167,7 +192,7 @@ func main() {
             {
                 Name: "add",
                 Category: "Operations",
-                Usage: "add a new field to the credential store, will overwrite if exists",
+                Usage: "Add a new field to the credential store, will overwrite if exists",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
@@ -265,7 +290,7 @@ func main() {
                 Name: "remove",
                 Category: "Operations",
                 Aliases: []string{"rm"},
-                Usage: "remove a field from the credential store",
+                Usage: "Remove a field from the credential store",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
@@ -275,6 +300,9 @@ func main() {
                     if dbname == "" {
                         return errors.New("Name to credential store not specified.")
                     }
+
+                    col := color.New(color.FgWhite).Add(color.Bold)
+                    col.Printf("\n[*] Removing field entry from credential store `%s` [*]\n", dbname)
 
                     // read master key for the credential store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
@@ -314,14 +342,15 @@ func main() {
                         return err
                     }
 
-                    fmt.Println("[*] Successfully removed field from credential store [*]")
+                    col = color.New(color.FgGreen).Add(color.Bold)
+                    col.Println("[*] Successfully nuked the credential store! Poof! [*]")
                     return nil
                 },
             },
             {
                 Name: "view",
                 Category: "Operations",
-                Usage: "decrypt and view a specific field from the credential store",
+                Usage: "Decrypt and view a specific field from the credential store",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
@@ -331,6 +360,9 @@ func main() {
                     if dbname == "" {
                         return errors.New("Name to credential store not specified.")
                     }
+
+                    col := color.New(color.FgWhite).Add(color.Bold)
+                    col.Printf("\n[*] Retrieving field entry from credential store `%s` [*]\n", dbname)
 
                     // read master key for the credential store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
@@ -376,9 +408,46 @@ func main() {
                 },
             },
             {
+                Name: "fields",
+                Category: "Operations",
+                Usage: "List all available fields in a credential store",
+                Flags: []cli.Flag{
+                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                },
+                Action: func(c *cli.Context) error {
+                    dbname := c.String("dbname")
+                    if dbname == "" {
+                        return errors.New("Name to credential store not specified.")
+                    }
+
+                    col := color.New(color.FgWhite).Add(color.Bold)
+                    col.Printf("\n[*] Retrieving all fields from credential store `%s` [*]\n", dbname)
+
+                    // read master key for the credential store
+                    fmt.Printf("\n> Master Key (will not be echoed): ")
+                    masterkey, err := ReadKeyFromStdin()
+                    fmt.Println()
+                    if err != nil {
+                        return err
+                    }
+
+                    // open the credential store for adding the new field
+                    store, err := ghostpass.OpenStore(dbname, masterkey)
+                    if err != nil {
+                        return err
+                    }
+
+                    table := tablewriter.NewWriter(os.Stdout)
+                    table.SetHeader([]string{"Service"})
+                    table.Append(store.GetFields())
+                    table.Render()
+                    return nil
+                },
+            },
+            {
                 Name: "import",
                 Category: "Distribution",
-                Usage: "imports a new password database given a plainsight file",
+                Usage: "Imports a new password database given a plainsight file",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "corpus", Aliases: []string{"s"}},
                 },
@@ -414,7 +483,7 @@ func main() {
             {
                 Name: "export",
                 Category: "Distribution",
-                Usage: "generates a plainsight file for distribution from current state",
+                Usage: "Generates a plainsight file for distribution from current state",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "corpus", Aliases: []string{"s"}},

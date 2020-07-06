@@ -125,6 +125,7 @@ func OpenStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
     if !PathExists(dbpath) {
         return nil, errors.New("Credential store does not exist. Create before opening.")
     }
+
     // given a name to a db, create it from the workspace, and read bytes for serialization
     // open file for reading
     data, err := ioutil.ReadFile(dbpath)
@@ -208,6 +209,7 @@ func (cs *CredentialStore) FieldExists(service string) bool {
     return true
 }
 
+
 // Add a new field to the credential store, given a service as key, and a credential pair for
 // encryption and storage. Will overwrite if already exists.
 func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
@@ -289,6 +291,16 @@ func (cs *CredentialStore) GetField(service string) ([]string, error) {
 }
 
 
+// Return a slice of all available services in the credential store.
+func (cs *CredentialStore) GetFields() []string {
+    var fields []string
+    for service, _ := range cs.Fields {
+        fields = append(fields, service)
+    }
+    return fields
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////
 //
 //     PLAINSIGHT DISTRIBUTION
@@ -312,7 +324,8 @@ func (cs *CredentialStore) Export(corpus string) (string, error) {
 	return res, nil
 }
 
-
+// Given an imported compressed corpus, extract and decrypt it with a symmetric key, and attempt to reinitialize
+// the state it represented when marshalled.
 func Import(key *memguard.Enclave, encoded string, persist bool) (*CredentialStore, error) {
 	// extract out the db
 	// decompress the compressed string
