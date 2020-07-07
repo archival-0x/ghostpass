@@ -15,7 +15,7 @@ const (
     // current protocol version
     Version int = 2.0
 
-	// default configuration storage path for credential stores
+	// default configuration storage path for secret stores
 	StoragePath string = ".ghostpass"
 
     // represents the state that the store is at where it's residing
@@ -24,10 +24,10 @@ const (
 )
 
 
-// Helper routine to construct path to a ghostpass workspace for storage
+// Helper routine to construct path to a ghostpaworkspace for storage
 // if not found in filesystem, and returns name
 func MakeWorkspace() string {
-    // get absolute path to ghostpass workspace
+    // get absolute path to ghostpaworkspace
 	storepath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), StoragePath)
 
 	// check if storage path exists, if not, create
@@ -47,24 +47,26 @@ func PathExists(path string) bool {
 }
 
 
-// Defines a serializable `CredentialStore`, which can be instantiated to securely hold credentials
+// Defines a serializable `SecretStore`, which can be instantiated to securely hold secrets
 // in the form of `Field`s, and exported for plainsight distribution.
-type CredentialStore struct {
+type SecretStore struct {
 
-    // ghostpass protocol version
+    // ghostpaprotocol version
     Version int `json:"version"`
 
     // represents the state of the store. when exported, it will swap to Plainsight
     StoreState string `json:"state"`
 
-	// name identifier for the credential store
+	// name identifier for the secret store
     Name string `json:"name"`
 
 	// represents a hashed and secured key for symmetric encryption
     SymmetricKey []byte `json:"-"`
 
-	// internal state of the store with all the available credentials and secrets
+	// internal state of the store with all the available secrets
     Fields map[string]*Field `json:"fields"`
+
+    // TODO: notes for genercized information to distribute
 }
 
 
@@ -75,9 +77,9 @@ type CredentialStore struct {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-// Initializes a new `CredentialStore` given a name and master symmetric key that is secured. Will
+// Initializes a new `SecretStore` given a name and master symmetric key that is secured. Will
 // create a new store if name does not exist, otherwise will read and return the existing one.
-func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
+func InitStore(name string, pwd *memguard.Enclave) (*SecretStore, error) {
 
     // initialize path to database, return empty buffer
 	dbpath := fmt.Sprintf("%s/%s.gp", MakeWorkspace(), name)
@@ -93,7 +95,7 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
     file.Close()
 
 	// given a secured plaintext password, unseal from secure memory, create a hash checksum from it, which
-	// can be checked against when re-opening for other credential store interactions.
+	// can be checked against when re-opening for other secret store interactions.
 	key, err := pwd.Open()
 	if err != nil {
 		return nil, err
@@ -105,8 +107,8 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 	// destroy original plaintext key
 	defer key.Destroy()
 
-	// if not, create an empty CredentialStore
-	return &CredentialStore{
+	// if not, create an empty SecretStore
+	return &SecretStore{
         Version:      Version,
         StoreState:   StoreStationary,
 		Name:         name,
@@ -116,9 +118,9 @@ func InitStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 }
 
 
-// Opens an existing `CredentialStore` for interaction by the user. Will error if does not
+// Opens an existing `SecretStore` for interaction by the user. Will error if does not
 // exist or cannot properly read and deserialize the contents of the persistent database.
-func OpenStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
+func OpenStore(name string, pwd *memguard.Enclave) (*SecretStore, error) {
 
     // check if store doesn't exist
 	dbpath := fmt.Sprintf("%s/%s.gp", MakeWorkspace(), name)
@@ -134,7 +136,7 @@ func OpenStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
     }
 
     // given a secured plaintext password, unseal from secure memory, create a hash checksum from it, which
-	// can be checked against when re-opening for other credential store interactions.
+	// can be checked against when re-opening for other secret store interactions.
 	key, err := pwd.Open()
 	if err != nil {
 		return nil, err
@@ -155,13 +157,13 @@ func OpenStore(name string, pwd *memguard.Enclave) (*CredentialStore, error) {
 }
 
 
-// Nukes the entire state of a given credential store, deleting all traces of it in-memory and
+// Nukes the entire state of a given secret store, deleting all traces of it in-memory and
 // the path to the file-based database.
-func (cs *CredentialStore) DestroyStore() error {
+func (ss *SecretStore) DestroyStore() error {
 
 	// construct path to workspace
 	storepath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), StoragePath)
-	dbpath := fmt.Sprintf("%s/%s.gp", storepath, cs.Name)
+	dbpath := fmt.Sprintf("%s/%s.gp", storepath, ss.Name)
 
 	// delete the persistent path
 	err := os.Remove(dbpath)
@@ -170,21 +172,21 @@ func (cs *CredentialStore) DestroyStore() error {
 	}
 
 	// golang garbage collection so delete in-memory struct once out of scope, but force it
-	cs = nil
+	ss = nil
 	return nil
 }
 
 
-// Commits any changes made to the current state of the existing `CredentialStore` back to the
+// Commits any changes made to the current state of the existing `SecretStore` back to the
 // file-based database to ensure that operations all persist.
-func (cs *CredentialStore) CommitStore() error {
+func (ss *SecretStore) CommitStore() error {
 
-	// construct and open path to credential store
+	// construct and open path to secret store
 	storepath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), StoragePath)
-	dbpath := fmt.Sprintf("%s/%s.gp", storepath, cs.Name)
+	dbpath := fmt.Sprintf("%s/%s.gp", storepath, ss.Name)
 
 	// serialize structure for writing to file
-	data, err := json.Marshal(cs)
+	data, err := json.Marshal(ss)
 	if err != nil {
 		return err
 	}
@@ -202,65 +204,65 @@ func (cs *CredentialStore) CommitStore() error {
 
 
 // Helper routine used to check if a field with a specific service already exists.
-func (cs *CredentialStore) FieldExists(service string) bool {
-    if _, ok := cs.Fields[service]; !ok {
+func (ss *SecretStore) FieldExists(service string) bool {
+    if _, ok := ss.Fields[service]; !ok {
         return false
     }
     return true
 }
 
 
-// Add a new field to the credential store, given a service as key, and a credential pair for
+// Add a new field to the secret store, given a service as key, and a credential pair for
 // encryption and storage. Will overwrite if already exists.
-func (cs *CredentialStore) AddField(service string, username string, pwd *memguard.Enclave) error {
+func (ss *SecretStore) AddField(service string, username string, pwd *memguard.Enclave) error {
 	// initialize a new field from the given parameters
-	field, err := NewField(cs.SymmetricKey, username, pwd)
+	field, err := NewField(ss.SymmetricKey, username, pwd)
 	if err != nil {
 		return err
 	}
 
 	// set encrypted mapping between service and the cred secret it represents
-	cs.Fields[service] = field
+	ss.Fields[service] = field
 	return nil
 }
 
 
 // Given an existing field, attempt to encrypt a deniable credential pair, an derive a "deniability" key for
 // plausible deniability. (TODO)
-func (cs *CredentialStore) AddDeniableField(service string, username string, pwd *memguard.Enclave) error {
+func (ss *SecretStore) AddDeniableField(service string, username string, pwd *memguard.Enclave) error {
     // check to see if the field exists
-    if !cs.FieldExists(service) {
+    if !ss.FieldExists(service) {
         return errors.New("cannot find entry given the service name provided")
     }
 
     // TODO
     // if exists, update it with the deniable secret
     //field.AddDeniableSecret(username, pwd)
-    //cs.Fields[service] = field
+    //ss.Fields[service] = field
     return nil
 }
 
 
-// Given a service name as the key, delete an entry corresponding to it in the credential store.
-func (cs *CredentialStore) RemoveField(service string) error {
+// Given a service name as the key, delete an entry corresponding to it in the secret store.
+func (ss *SecretStore) RemoveField(service string) error {
 	// check to see if field exists in store
-    if !cs.FieldExists(service) {
+    if !ss.FieldExists(service) {
 		return errors.New("cannot find entry given the service name provided")
 	}
 
 	// remove the field safely by service key
-	delete(cs.Fields, service)
+	delete(ss.Fields, service)
 	return nil
 }
 
 
 // Given a service name as the key, reveal the contents safely for the given entry.
-func (cs *CredentialStore) GetField(service string) ([]string, error) {
-    if !cs.FieldExists(service) {
+func (ss *SecretStore) GetField(service string) ([]string, error) {
+    if !ss.FieldExists(service) {
 		return nil, errors.New("cannot find entry given the service name provided")
 	}
 
-    val := cs.Fields[service]
+    val := ss.Fields[service]
 
     // unseal user and password
     user, err := val.Username.Open()
@@ -275,7 +277,7 @@ func (cs *CredentialStore) GetField(service string) ([]string, error) {
 
     /*
     // decrypt password
-    pwdstr, err := BoxDecrypt(cs.SymmetricKey, pwd.Bytes())
+    pwdstr, err := BoxDecrypt(ss.SymmetricKey, pwd.Bytes())
     if err != nil {
         return nil, err
     }
@@ -291,10 +293,10 @@ func (cs *CredentialStore) GetField(service string) ([]string, error) {
 }
 
 
-// Return a slice of all available services in the credential store.
-func (cs *CredentialStore) GetFields() []string {
+// Return a slice of all available services in the secret store.
+func (ss *SecretStore) GetFields() []string {
     var fields []string
-    for service, _ := range cs.Fields {
+    for service, _ := range ss.Fields {
         fields = append(fields, service)
     }
     return fields
@@ -308,27 +310,34 @@ func (cs *CredentialStore) GetFields() []string {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-// given a corpus to hide in, take the current state of the credential store,
+// Given a corpus to hide in, take the current state of the secret store,
 // and export a version of it hidden within the corpus through zero-width encoding
-func (cs *CredentialStore) Export(corpus string) (string, error) {
-	// serialize structure into JSON
-	data, err := cs.PlainsightMarshal()
+func (ss *SecretStore) Export(corpus string) (string, error) {
+	// serialize structure into compressed JSON
+	data, err := ss.PlainsightMarshal()
 	if err != nil {
 		return "", err
 	}
-
-    // TODO: generate compressed data
 
 	// generate resultant plainsight output
 	res := EncodeHiddenString(corpus, data)
 	return res, nil
 }
 
+
 // Given an imported compressed corpus, extract and decrypt it with a symmetric key, and attempt to reinitialize
 // the state it represented when marshalled.
-func Import(key *memguard.Enclave, encoded string, persist bool) (*CredentialStore, error) {
-	// extract out the db
-	// decompress the compressed string
+func Import(key *memguard.Enclave, encoded string, persist bool) (*SecretStore, error) {
+
+    // sanity-check to see if corpus contains zero-width runes
+    if !ContainsHiddenChars(encoded) {
+        return nil, errors.New("No encoded and encrypted detected in corpus.")
+    }
+
+	// extract out the database for deserialization
+    _ = DecodeHiddenString(encoded)
+
+	// decomprethe compressed string
 	// attempt to unmarshal into a struct
 	// set symmetric master key to struct
 	// decrypt service keys with master key

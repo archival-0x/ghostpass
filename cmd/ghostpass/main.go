@@ -77,18 +77,18 @@ func main() {
             {
                 Name: "init",
                 Category: "Initialization",
-                Usage: "Create a new secret credential store",
+                Usage: "Create a new secret secret store",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
                     if dbname == "" {
-                        return errors.New("Name to credential store not specified")
+                        return errors.New("Name to secret store not specified")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Initializing new credential store `%s` [*]\n\n", dbname)
+                    col.Printf("\n[*] Initializing new secret store `%s` [*]\n\n", dbname)
 
                     // read master key and store in buffer safely
                     fmt.Printf("> Master Key (will not be echoed): ")
@@ -98,7 +98,7 @@ func main() {
                         return err
                     }
 
-                    // create new credential store
+                    // create new secret store
                     store, err := ghostpass.InitStore(dbname, masterkey)
                     if err != nil {
                         return err
@@ -110,17 +110,17 @@ func main() {
                     }
 
                     col = color.New(color.FgGreen).Add(color.Bold)
-                    col.Println("[*] Successfully initialized new credential store. [*]")
+                    col.Println("[*] Successfully initialized new secret store. [*]")
                     return nil
                 },
             },
             {
                 Name: "stores",
                 Category: "Initialization",
-                Usage: "List existing secret credential stores",
+                Usage: "List existing secret secret stores",
                 Action: func(c *cli.Context) error {
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Println("\n[*] Listing all available credential stores [*]\n")
+                    col.Println("\n[*] Listing all available secret stores [*]\n")
 
                     files, err := ioutil.ReadDir(ghostpass.MakeWorkspace())
                     if err != nil {
@@ -140,20 +140,20 @@ func main() {
             {
                 Name: "destruct",
                 Category: "Initialization",
-                Usage: "Completely nuke a credential store given its name",
+                Usage: "Completely nuke a secret store given its name",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
                     if dbname == "" {
-                        return errors.New("Name to credential store not specified.")
+                        return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Destroying credential store `%s` [*]\n\n", dbname)
+                    col.Printf("\n[*] Destroying secret store `%s` [*]\n\n", dbname)
 
-                    // read master key for the credential store
+                    // read master key for the secret store
                     fmt.Printf("> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
@@ -161,7 +161,7 @@ func main() {
                         return err
                     }
 
-                    // open the credential store for deletion
+                    // open the secret store for deletion
                     store, err := ghostpass.OpenStore(dbname, masterkey)
                     if err != nil {
                         return err
@@ -189,14 +189,14 @@ func main() {
                     // nuke!
                     store.DestroyStore()
                     col = color.New(color.FgGreen).Add(color.Bold)
-                    col.Println("[*] Successfully nuked the credential store! Poof! [*]")
+                    col.Println("[*] Successfully nuked the secret store! Poof! [*]")
                     return nil
                 },
             },
             {
                 Name: "add",
                 Category: "Operations",
-                Usage: "Add a new field to the credential store, will overwrite if exists",
+                Usage: "Add a new field to the secret store, will overwrite if exists",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
@@ -205,13 +205,13 @@ func main() {
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
                     if dbname == "" {
-                        return errors.New("Name to credential store not specified.")
+                        return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Adding field entry to credential store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Adding field entry to secret store `%s` [*]\n", dbname)
 
-                    // read master key for the credential store
+                    // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
@@ -219,7 +219,7 @@ func main() {
                         return err
                     }
 
-                    // open the credential store for adding the new field
+                    // open the secret store for adding the new field
                     store, err := ghostpass.OpenStore(dbname, masterkey)
                     if err != nil {
                         return err
@@ -261,7 +261,7 @@ func main() {
                     // check if key already exists and warn user of overwrite
                     if store.FieldExists(service) {
 					    prompt := promptui.Select{
-                            Label: "Field already exists in credential store. Overwrite?",
+                            Label: "Field already exists in secret store. Overwrite?",
                             Items: []string{"Yes", "No"},
 					    }
                         _, result, err := prompt.Run()
@@ -286,7 +286,7 @@ func main() {
                     }
 
                     col = color.New(color.FgGreen).Add(color.Bold)
-                    col.Println("[*] Successfully nuked the credential store! Poof! [*]")
+                    col.Println("[*] Successfully nuked the secret store! Poof! [*]")
                     return nil
                 },
             },
@@ -294,7 +294,7 @@ func main() {
                 Name: "remove",
                 Category: "Operations",
                 Aliases: []string{"rm"},
-                Usage: "Remove a field from the credential store",
+                Usage: "Remove a field from the secret store",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
@@ -302,13 +302,13 @@ func main() {
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
                     if dbname == "" {
-                        return errors.New("Name to credential store not specified.")
+                        return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Removing field entry from credential store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Removing field entry from secret store `%s` [*]\n", dbname)
 
-                    // read master key for the credential store
+                    // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
@@ -316,7 +316,7 @@ func main() {
                         return err
                     }
 
-                    // open the credential store for removing the field
+                    // open the secret store for removing the field
                     store, err := ghostpass.OpenStore(dbname, masterkey)
                     if err != nil {
                         return err
@@ -347,14 +347,14 @@ func main() {
                     }
 
                     col = color.New(color.FgGreen).Add(color.Bold)
-                    col.Println("[*] Successfully nuked the credential store! Poof! [*]")
+                    col.Println("[*] Successfully nuked the secret store! Poof! [*]")
                     return nil
                 },
             },
             {
                 Name: "view",
                 Category: "Operations",
-                Usage: "Decrypt and view a specific field from the credential store",
+                Usage: "Decrypt and view a specific field from the secret store",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
@@ -362,13 +362,13 @@ func main() {
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
                     if dbname == "" {
-                        return errors.New("Name to credential store not specified.")
+                        return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Retrieving field entry from credential store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Retrieving field entry from secret store `%s` [*]\n", dbname)
 
-                    // read master key for the credential store
+                    // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
@@ -376,7 +376,7 @@ func main() {
                         return err
                     }
 
-                    // open the credential store for adding the new field
+                    // open the secret store for adding the new field
                     store, err := ghostpass.OpenStore(dbname, masterkey)
                     if err != nil {
                         return err
@@ -414,20 +414,20 @@ func main() {
             {
                 Name: "fields",
                 Category: "Operations",
-                Usage: "List all available fields in a credential store",
+                Usage: "List all available fields in a secret store",
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
                     if dbname == "" {
-                        return errors.New("Name to credential store not specified.")
+                        return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Retrieving all fields from credential store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Retrieving all fields from secret store `%s` [*]\n", dbname)
 
-                    // read master key for the credential store
+                    // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
@@ -435,7 +435,7 @@ func main() {
                         return err
                     }
 
-                    // open the credential store for adding the new field
+                    // open the secret store for adding the new field
                     store, err := ghostpass.OpenStore(dbname, masterkey)
                     if err != nil {
                         return err
@@ -461,7 +461,7 @@ func main() {
                         return errors.New("No path to corpus provided for plainsight decoding.")
                     }
 
-                    // read master key for the credential store
+                    // read master key for the secret store
                     fmt.Printf("\t> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
@@ -469,13 +469,13 @@ func main() {
                         return err
                     }
 
-                    // TODO: read corpus file
+                    // read data out of corpus file
                     corpusdata, err := ioutil.ReadFile(corpus)
                     if err != nil {
                         return err
                     }
 
-                    // recreate credential store given plainsight corpus
+                    // recreate secret store given plainsight corpus
                     store, err := ghostpass.Import(masterkey, string(corpusdata), false)
                     if err != nil {
                         return err
@@ -499,7 +499,7 @@ func main() {
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
                     if dbname == "" {
-                        return errors.New("Name to credential store not specified.")
+                        return errors.New("Name to secret store not specified.")
                     }
 
                     corpus := c.String("corpus")
@@ -509,14 +509,14 @@ func main() {
 
                     // TODO: optional file name to export it as
 
-                    // read master key for the credential store
+                    // read master key for the secret store
                     fmt.Printf("\t> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     if err != nil {
                         return err
                     }
 
-                    // open the credential store for adding the new field
+                    // open the secret store for adding the new field
                     store, err := ghostpass.OpenStore(dbname, masterkey)
                     if err != nil {
                         return err

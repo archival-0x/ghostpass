@@ -21,10 +21,9 @@ func ContainsHiddenChars(corpus string) bool {
 		strings.ContainsRune(corpus, ZWNJ)
 }
 
-// given a plaintext string corpus and a secret to hide, encode it with zero-width characters
+// Given a plaintext string corpus and a secret to hide, encode it with zero-width characters by converting serialized input
+// into bitstring, which is then encoded to the plaintext to hide in.
 func EncodeHiddenString(plain string, secret []byte) string {
-
-	// TODO: compress the bytes representing the secret
 
 	// convert secret string into binary representation
 	var binary []byte

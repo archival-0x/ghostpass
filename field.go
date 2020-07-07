@@ -1,5 +1,5 @@
 // Provides the high level definition for the `Field` struct, which encapsulates and performs AEAD
-// on secrets in order to return for storage back into the credential store mapping.
+// on secrets in order to return for storage back into the secret store mapping.
 package ghostpass
 
 import (
