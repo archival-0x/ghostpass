@@ -1,7 +1,9 @@
 package ghostpass
 
 import (
+    "fmt"
 	"strconv"
+    "bytes"
 	"strings"
 )
 
@@ -9,11 +11,10 @@ const (
 	// ZWJ represents zero-width joiner.
 	ZWJ = '\u200D'
 
-	// ZWNJ represents zero-width non-joiner.
+	// ZWNJ representds zero-width non-joiner.
 	ZWNJ = '\u200C'
 )
 
-// TODO: construct error
 
 // Checks to see if a given corpus file contains zero-width characters already
 func ContainsHiddenChars(corpus string) bool {
@@ -21,23 +22,39 @@ func ContainsHiddenChars(corpus string) bool {
 		strings.ContainsRune(corpus, ZWNJ)
 }
 
+
+// Helper function described here: https://stackoverflow.com/a/37350639
+func StringToBin(s string) string {
+    var buffer bytes.Buffer
+    for _, val := range s {
+        fmt.Fprintf(&buffer, "%b", val)
+    }
+    return fmt.Sprintf("%s", buffer.Bytes())
+}
+
+
+func BinToString(binstring string) (cleartext string) {
+    for _, c := range binstring {
+        cleartext = fmt.Sprintf("%s%s", cleartext, c)
+    }
+    return
+}
+
+
 // Given a plaintext string corpus and a secret to hide, encode it with zero-width characters by converting serialized input
 // into bitstring, which is then encoded to the plaintext to hide in.
-func EncodeHiddenString(plain string, secret []byte) string {
+func EncodeHiddenString(plain string, secret string) string {
 
 	// convert secret string into binary representation
-	var binary []byte
-	for _, c := range secret {
-		binary = strconv.AppendInt(binary, int64(c), 2)
-	}
+	binary := StringToBin(secret)
 
 	// use a strings builder to push unicode characters from binary bytearray
 	var corpus strings.Builder
 	corpus.WriteString(plain)
-	for b := range binary {
-		if b == 1 {
+	for _, b := range binary {
+		if b == 49 { // 1
 			corpus.WriteString(string(ZWJ))
-		} else if b == 0 {
+		} else if b == 48 { // 0
 			corpus.WriteString(string(ZWNJ))
 		}
 	}
@@ -46,17 +63,36 @@ func EncodeHiddenString(plain string, secret []byte) string {
 	return corpus.String()
 }
 
+
 // given a corpus string with encoded zero-width characters, find them and strip them back
 // for deserialization,
 func DecodeHiddenString(corpus string) []byte {
-	var binresult []byte
 
 	// iterate through corpus and parse out zero-width unicode chars
-	for _, b := range []byte(corpus) {
-		binresult = append(binresult, b)
+	var binresult []byte
+
+    split := 0
+	for _, b := range corpus {
+
+        // add split between text in order to make conversion back easier
+        if split == 8 {
+            binresult = append(binresult, byte(' '))
+            split = 0
+        }
+
+        if b == ZWJ {
+		    binresult = append(binresult, byte('1'))
+        } else if b == ZWNJ {
+		    binresult = append(binresult, byte('0'))
+        }
+        split += 1
 	}
 
-	// decode
+	// decode the bitstring back into something deserializable
 	var result []byte
+    for _, s := range strings.Fields(string(binresult)) {
+        n, _ := strconv.ParseUint(s, 2, 8)
+        result = append(result, byte(n))
+    }
 	return result
 }

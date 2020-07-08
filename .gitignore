@@ -1,2 +1,10 @@
+# generated execs
 ghostpass
 main
+
+# other extensions
+*.out
+
+# anything from the gh-pages branch
+vendor/
+.sass-cache/

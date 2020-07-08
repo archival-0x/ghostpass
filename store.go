@@ -320,14 +320,14 @@ func (ss *SecretStore) Export(corpus string) (string, error) {
 	}
 
 	// generate resultant plainsight output
-	res := EncodeHiddenString(corpus, data)
+	res := EncodeHiddenString(corpus, string(data))
 	return res, nil
 }
 
 
 // Given an imported compressed corpus, extract and decrypt it with a symmetric key, and attempt to reinitialize
 // the state it represented when marshalled.
-func Import(key *memguard.Enclave, encoded string, persist bool) (*SecretStore, error) {
+func Import(pwd *memguard.Enclave, encoded string) (*SecretStore, error) {
 
     // sanity-check to see if corpus contains zero-width runes
     if !ContainsHiddenChars(encoded) {
@@ -335,12 +335,22 @@ func Import(key *memguard.Enclave, encoded string, persist bool) (*SecretStore, 
     }
 
 	// extract out the database for deserialization
-    _ = DecodeHiddenString(encoded)
+    decoded := DecodeHiddenString(encoded)
 
-	// decomprethe compressed string
-	// attempt to unmarshal into a struct
-	// set symmetric master key to struct
-	// decrypt service keys with master key
-	// if persist is set, write changes to new or existing state
-	return nil, nil
+    // given a secured plaintext password, unseal from secure memory, create a hash checksum from it, which
+	// can be checked against when re-opening for other secret store interactions.
+	key, err := pwd.Open()
+	if err != nil {
+		return nil, err
+	}
+
+    // initialize as SHA hash
+	checksum := sha256.Sum256(key.Bytes())
+
+	// decompress the compressed string back into a SecretStore
+    store, err := PlainsightUnmarshal(checksum, decoded)
+    if err != nil {
+        return nil, err
+    }
+	return store, nil
 }

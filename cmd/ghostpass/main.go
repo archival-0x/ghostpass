@@ -15,9 +15,9 @@ import (
     "github.com/fatih/color"
     "github.com/manifoldco/promptui"
     "github.com/awnumar/memguard"
-    "golang.org/x/crypto/ssh/terminal"
     "github.com/olekukonko/tablewriter"
     "github.com/ex0dus-0x/ghostpass"
+    "golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -441,6 +441,8 @@ func main() {
                         return err
                     }
 
+                    fmt.Println()
+
                     table := tablewriter.NewWriter(os.Stdout)
                     table.SetHeader([]string{"Service"})
                     table.Append(store.GetFields())
@@ -476,7 +478,7 @@ func main() {
                     }
 
                     // recreate secret store given plainsight corpus
-                    store, err := ghostpass.Import(masterkey, string(corpusdata), false)
+                    store, err := ghostpass.Import(masterkey, strings.TrimSpace(string(corpusdata)))
                     if err != nil {
                         return err
                     }
@@ -495,6 +497,7 @@ func main() {
                 Flags: []cli.Flag{
                     &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
                     &cli.StringFlag{Name: "corpus", Aliases: []string{"c"}},
+                    &cli.StringFlag{Name: "outfile", Aliases: []string{"o"}},
                 },
                 Action: func(c *cli.Context) error {
                     dbname := c.String("dbname")
@@ -507,10 +510,16 @@ func main() {
                         return errors.New("No corpus provided for plainsight encoding.")
                     }
 
-                    // TODO: optional file name to export it as
+                    // if output file name not set, set a default one to cwd
+                    var outfile string
+                    if c.String("outfile") == "" {
+                        outfile = "plainsight_" + dbname + ".out"
+                    } else {
+                        outfile = c.String("outfile")
+                    }
 
                     // read master key for the secret store
-                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     if err != nil {
                         return err
@@ -522,14 +531,26 @@ func main() {
                         return err
                     }
 
-                    // TODO: read corpus file
-
-                    // given the current state the store represents, export it as a plainsight file
-                    final, err := store.Export(corpus)
+                    // read data from corpus file
+                    corpusdata, err := ioutil.ReadFile(corpus)
                     if err != nil {
                         return err
                     }
-                    fmt.Println("{}", final)
+
+                    // given the current state the store represents, export it as a plainsight file
+                    final, err := store.Export(strings.TrimSpace(string(corpusdata)))
+                    if err != nil {
+                        return err
+                    }
+
+                    // write finalized data to output file
+                    err = ioutil.WriteFile(outfile, []byte(final), 0644)
+                    if err != nil {
+                        return err
+                    }
+
+                    col := color.New(color.FgGreen).Add(color.Bold)
+                    col.Printf("\n[*] Successfully wrote plainsight file to `%s` [*]\n", outfile)
                     return nil
                 },
             },
