@@ -464,7 +464,7 @@ func main() {
                     }
 
                     // read master key for the secret store
-                    fmt.Printf("\t> Master Key (will not be echoed): ")
+                    fmt.Printf("\n> Master Key (will not be echoed): ")
                     masterkey, err := ReadKeyFromStdin()
                     fmt.Println()
                     if err != nil {

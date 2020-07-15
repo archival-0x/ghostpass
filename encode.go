@@ -47,6 +47,7 @@ func EncodeHiddenString(plain string, secret string) string {
 
 	// convert secret string into binary representation
 	binary := StringToBin(secret)
+    fmt.Println(binary)
 
 	// use a strings builder to push unicode characters from binary bytearray
 	var corpus strings.Builder
@@ -73,17 +74,16 @@ func DecodeHiddenString(corpus string) []byte {
 
     split := 0
 	for _, b := range corpus {
+        if b == ZWJ {
+		    binresult = append(binresult, byte('1'))
+        } else if b == ZWNJ {
+		    binresult = append(binresult, byte('0'))
+        }
 
         // add split between text in order to make conversion back easier
         if split == 8 {
             binresult = append(binresult, byte(' '))
             split = 0
-        }
-
-        if b == ZWJ {
-		    binresult = append(binresult, byte('1'))
-        } else if b == ZWNJ {
-		    binresult = append(binresult, byte('0'))
         }
         split += 1
 	}
@@ -91,8 +91,11 @@ func DecodeHiddenString(corpus string) []byte {
 	// decode the bitstring back into something deserializable
 	var result []byte
     for _, s := range strings.Fields(string(binresult)) {
+        fmt.Printf("%s ", s)
         n, _ := strconv.ParseUint(s, 2, 8)
         result = append(result, byte(n))
     }
+
+    fmt.Println(string(result))
 	return result
 }
