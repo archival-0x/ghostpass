@@ -3,8 +3,8 @@ package ghostpass
 import (
 	"bytes"
 	"fmt"
-	"math/big"
 	"strings"
+	"strconv"
 )
 
 const (
@@ -25,16 +25,22 @@ func ContainsHiddenChars(corpus string) bool {
 func DataToBin(s string) string {
 	var buffer bytes.Buffer
 	for _, val := range s {
-		fmt.Fprintf(&buffer, "%b", val)
+		fmt.Fprintf(&buffer, "%08b", val)
 	}
-	return fmt.Sprintf("%s", buffer.Bytes())
+	return buffer.String()
 }
 
 // Helper function used to convert a binary string back into a byte array of data.
 func BinToData(binstring string) []byte {
-	bigint := new(big.Int)
-	bigint.SetString("0b"+binstring, 0)
-	return bigint.Bytes()
+	var out []byte
+	for i := 0; i + 8 <= len(binstring); i += 8 {
+		b, err := strconv.ParseUint(binstring[i:i+8], 2, 8)
+		if err != nil {
+			panic(err)
+		}
+		out = append(out, byte(b))
+	}
+	return out
 }
 
 // Given a plaintext string corpus and a secret to hide, encode it with zero-width characters by converting serialized input
@@ -73,8 +79,7 @@ func DecodeHiddenString(corpus string) []byte {
 		}
 	}
 
-	fmt.Println(binresult)
-
 	// decode the bitstring back into a compressed form.
-	return BinToData(string(binresult))
+    res := BinToData(string(binresult))
+    return res
 }

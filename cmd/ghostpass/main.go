@@ -487,6 +487,9 @@ func main() {
                     if err := store.CommitStore(); err != nil {
                         return err
                     }
+
+                    col := color.New(color.FgGreen).Add(color.Bold)
+                    col.Printf("\n[*] Successfully imported new secret store [*]\n")
                     return nil
                 },
             },

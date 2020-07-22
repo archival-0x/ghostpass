@@ -18,7 +18,7 @@ Ghostpass is _novel_ in the sense that it applies modern symmetric cryptography 
 
 There's quite a bit of password/secrets managers that are out there today, so why even bother with Ghostpass? In order to answer this question, let's take a look at different password managers "models" that already exist, and the problems that plague them:
 
-* __Web-based password managers__ are centralized, and data breaches are possible since they are central points of failure.
+* __Web-based clients__ are centralized, and data breaches are possible since they are central points of failure.
 * __Offline clients__ ( i.e KeePass) don't enable for fast distribution across hosts and portability. They share a unified filetype that require compliant client implementations to work
 
 Ghostpass's implementation aims to create a compromise that doesn't require the authority of a password management service, but can still enable portability for users across whatever mediums they choose.

@@ -3,11 +3,11 @@
 package ghostpass
 
 import (
-	"bufio"
-	"bytes"
-	"compress/gzip"
+	//"bufio"
+	//"bytes"
+	//"compress/zlib"
+	//"io/ioutil"
 	"encoding/json"
-	"io/ioutil"
 )
 
 // Helper function that converts a stationary persistent store back into a `SecretStore` for interaction.
@@ -48,10 +48,11 @@ func StationaryUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 // Helper routine that prepares a secret store from an exported plainsight
 // distribution. Since the state stored on disk does not contain any remnants of the auth
 // credentials per field, this unmarshaller rederives that using the given symmetric key.
-func PlainsightUnmarshal(checksum [32]byte, compressed []byte) (*SecretStore, error) {
+func PlainsightUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, error) {
 
+    /*
 	// decompress the compressed input before deserializing
-	reader, err := gzip.NewReader(bytes.NewReader(compressed))
+	reader, err := zlib.NewReader(bytes.NewReader(compressed))
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +62,7 @@ func PlainsightUnmarshal(checksum [32]byte, compressed []byte) (*SecretStore, er
 	if err != nil {
 		return nil, err
 	}
+    */
 
 	// turn the serialized JSON back into a partially initialized state for a SecretStore
 	var ss struct {
@@ -69,10 +71,9 @@ func PlainsightUnmarshal(checksum [32]byte, compressed []byte) (*SecretStore, er
 		Name       string            `json:"name"`
 		Fields     map[string][]byte `json:"fields"`
 	}
-	err = json.Unmarshal(serialized, &ss)
-	if err != nil {
+    if err := json.Unmarshal(serialized, &ss); err != nil {
 		return nil, err
-	}
+    }
 
 	// create new semi-unencrypted mapping
 	var fields map[string]*Field
@@ -133,7 +134,7 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 	}
 
 	// serialize into a byte array for compression
-	plainsightStore, err := json.Marshal(&struct {
+	return json.Marshal(&struct {
 		Version    int               `json:"version"`
 		StoreState string            `json:"state"`
 		Name       string            `json:"name"`
@@ -144,17 +145,20 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 		Name:       ss.Name,
 		Fields:     encfields,
 	})
+
+    /*
 	if err != nil {
 		return nil, err
 	}
 
-	// apply gzip compression
+	// apply zlib compression
 	var buf bytes.Buffer
-	bufzip := gzip.NewWriter(&buf)
+	bufzip := zlib.NewWriter(&buf)
 	bufWrite := bufio.NewWriter(bufzip)
 	bufWrite.WriteString(string(plainsightStore))
 	bufWrite.Flush()
 
 	// finalize encoded stream for return
 	return buf.Bytes(), nil
+    */
 }
