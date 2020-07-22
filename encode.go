@@ -3,8 +3,8 @@ package ghostpass
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -33,7 +33,7 @@ func DataToBin(s string) string {
 // Helper function used to convert a binary string back into a byte array of data.
 func BinToData(binstring string) []byte {
 	var out []byte
-	for i := 0; i + 8 <= len(binstring); i += 8 {
+	for i := 0; i+8 <= len(binstring); i += 8 {
 		b, err := strconv.ParseUint(binstring[i:i+8], 2, 8)
 		if err != nil {
 			panic(err)
@@ -80,6 +80,6 @@ func DecodeHiddenString(corpus string) []byte {
 	}
 
 	// decode the bitstring back into a compressed form.
-    res := BinToData(string(binresult))
-    return res
+	res := BinToData(string(binresult))
+	return res
 }

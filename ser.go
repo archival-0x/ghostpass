@@ -50,19 +50,19 @@ func StationaryUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 // credentials per field, this unmarshaller rederives that using the given symmetric key.
 func PlainsightUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, error) {
 
-    /*
-	// decompress the compressed input before deserializing
-	reader, err := zlib.NewReader(bytes.NewReader(compressed))
-	if err != nil {
-		return nil, err
-	}
+	/*
+		// decompress the compressed input before deserializing
+		reader, err := zlib.NewReader(bytes.NewReader(compressed))
+		if err != nil {
+			return nil, err
+		}
 
-	// parse out serialized JSON plainsight store
-	serialized, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-    */
+		// parse out serialized JSON plainsight store
+		serialized, err := ioutil.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+	*/
 
 	// turn the serialized JSON back into a partially initialized state for a SecretStore
 	var ss struct {
@@ -71,9 +71,9 @@ func PlainsightUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 		Name       string            `json:"name"`
 		Fields     map[string][]byte `json:"fields"`
 	}
-    if err := json.Unmarshal(serialized, &ss); err != nil {
+	if err := json.Unmarshal(serialized, &ss); err != nil {
 		return nil, err
-    }
+	}
 
 	// create new semi-unencrypted mapping
 	var fields map[string]*Field
@@ -146,19 +146,19 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 		Fields:     encfields,
 	})
 
-    /*
-	if err != nil {
-		return nil, err
-	}
+	/*
+		if err != nil {
+			return nil, err
+		}
 
-	// apply zlib compression
-	var buf bytes.Buffer
-	bufzip := zlib.NewWriter(&buf)
-	bufWrite := bufio.NewWriter(bufzip)
-	bufWrite.WriteString(string(plainsightStore))
-	bufWrite.Flush()
+		// apply zlib compression
+		var buf bytes.Buffer
+		bufzip := zlib.NewWriter(&buf)
+		bufWrite := bufio.NewWriter(bufzip)
+		bufWrite.WriteString(string(plainsightStore))
+		bufWrite.Flush()
 
-	// finalize encoded stream for return
-	return buf.Bytes(), nil
-    */
+		// finalize encoded stream for return
+		return buf.Bytes(), nil
+	*/
 }

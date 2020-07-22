@@ -8,7 +8,6 @@ This is still on-going and a work-in-progress.
 
 * [x] Plainsight Distribution
 * [ ] Plausible deniability
-* [ ] Keybase filesystem integration
 
 ## Introduction
 
@@ -56,16 +55,16 @@ The Ghostpacommand-line application and library package can be installed to your
 $ go get github.com/ex0dus-0x/ghostpass/
 ```
 
-However, to minimize the exfiltration of information from the user from a misuser, we recommend the usage of a Docker container:
-
-```
-TODO
-```
-
 To use:
 
 ```
 $ ghostpass help
+```
+
+However, to minimize the exfiltration of information from the user from a misuser, we recommend the usage of a Docker container:
+
+```
+$ docker build .
 ```
 
 ## Contributing
