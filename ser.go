@@ -3,11 +3,11 @@
 package ghostpass
 
 import (
-	//"bufio"
-	//"bytes"
-	//"compress/zlib"
-	//"io/ioutil"
+	"bytes"
+	"compress/zlib"
+	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 )
 
 // Helper function that converts a stationary persistent store back into a `SecretStore` for interaction.
@@ -48,21 +48,25 @@ func StationaryUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 // Helper routine that prepares a secret store from an exported plainsight
 // distribution. Since the state stored on disk does not contain any remnants of the auth
 // credentials per field, this unmarshaller rederives that using the given symmetric key.
-func PlainsightUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, error) {
+func PlainsightUnmarshal(checksum [32]byte, encoded []byte) (*SecretStore, error) {
 
-	/*
-		// decompress the compressed input before deserializing
-		reader, err := zlib.NewReader(bytes.NewReader(compressed))
-		if err != nil {
-			return nil, err
-		}
+	// decode from base64
+	compressed, err := base64.StdEncoding.DecodeString(string(encoded))
+	if err != nil {
+		return nil, err
+	}
 
-		// parse out serialized JSON plainsight store
-		serialized, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return nil, err
-		}
-	*/
+	// decompress the compressed input before deserializing
+	reader, err := zlib.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+
+	// parse out serialized JSON plainsight store
+	serialized, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
 
 	// turn the serialized JSON back into a partially initialized state for a SecretStore
 	var ss struct {
@@ -76,7 +80,7 @@ func PlainsightUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 	}
 
 	// create new semi-unencrypted mapping
-	var fields map[string]*Field
+    fields := make(map[string]*Field)
 
 	for servicekey, secret := range ss.Fields {
 
@@ -115,12 +119,12 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 	// stores a final compressed mapping for the secret store's fields, where
 	// keys are encrypted for indistinguishability and a compressed form of the credential pair
 	// is also created to map against for serialization.
-	var encfields map[string][]byte
+    encfields := make(map[string][]byte)
 
 	// encrypt all the service keys for indistinguishability
 	for service, field := range ss.Fields {
 
-		// encrypt the service key
+		// encrypt the service key for indistinguishability
 		encservice, err := BoxEncrypt(ss.SymmetricKey, []byte(service))
 		if err != nil {
 			return nil, err
@@ -134,7 +138,7 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 	}
 
 	// serialize into a byte array for compression
-	return json.Marshal(&struct {
+	data, err := json.Marshal(&struct {
 		Version    int               `json:"version"`
 		StoreState string            `json:"state"`
 		Name       string            `json:"name"`
@@ -146,19 +150,21 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 		Fields:     encfields,
 	})
 
-	/*
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
+	}
 
-		// apply zlib compression
-		var buf bytes.Buffer
-		bufzip := zlib.NewWriter(&buf)
-		bufWrite := bufio.NewWriter(bufzip)
-		bufWrite.WriteString(string(plainsightStore))
-		bufWrite.Flush()
+	// apply zlib compression
+	var buf bytes.Buffer
+	gz := zlib.NewWriter(&buf)
+	if _, err := gz.Write(data); err != nil {
+		return nil, err
+	}
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
 
-		// finalize encoded stream for return
-		return buf.Bytes(), nil
-	*/
+	// finalize encoded stream for return
+	res := base64.StdEncoding.EncodeToString(buf.Bytes())
+	return []byte(res), nil
 }

@@ -286,7 +286,7 @@ func main() {
                     }
 
                     col = color.New(color.FgGreen).Add(color.Bold)
-                    col.Println("[*] Successfully nuked the secret store! Poof! [*]")
+                    col.Println("[*] Successfully added field to secret store! [*]")
                     return nil
                 },
             },
