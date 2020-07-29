@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
 )
@@ -80,12 +81,18 @@ func PlainsightUnmarshal(checksum [32]byte, encoded []byte) (*SecretStore, error
 	}
 
 	// create new semi-unencrypted mapping
-    fields := make(map[string]*Field)
+	fields := make(map[string]*Field)
 
 	for servicekey, secret := range ss.Fields {
 
+		// decode hex for key
+		dec, err := hex.DecodeString(servicekey)
+		if err != nil {
+			return nil, err
+		}
+
 		// decrypt service key if store file was plainsight exported
-		service, err := BoxDecrypt(checksum[:], []byte(servicekey))
+		service, err := BoxDecrypt(checksum[:], []byte(dec))
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +126,7 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 	// stores a final compressed mapping for the secret store's fields, where
 	// keys are encrypted for indistinguishability and a compressed form of the credential pair
 	// is also created to map against for serialization.
-    encfields := make(map[string][]byte)
+	encfields := make(map[string][]byte)
 
 	// encrypt all the service keys for indistinguishability
 	for service, field := range ss.Fields {
@@ -134,7 +141,8 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 		secret := field.AuthPair
 
 		// store the new encrypted entry
-		encfields[string(encservice)] = secret
+		enc := hex.EncodeToString(encservice)
+		encfields[enc] = secret
 	}
 
 	// serialize into a byte array for compression

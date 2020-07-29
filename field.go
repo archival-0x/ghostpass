@@ -76,7 +76,7 @@ func NewField(key []byte, username string, pwd *memguard.Enclave) (*Field, error
 func ReconstructField(key []byte, compressed []byte) (*Field, error) {
 
 	// create empty field, and partially initialize
-	var field *Field
+	var field Field
 	field.AuthPair = compressed
 
 	// rederive auth pair with symmetric key
@@ -86,7 +86,7 @@ func ReconstructField(key []byte, compressed []byte) (*Field, error) {
 	}
 
 	// return populated field
-	return field, nil
+	return &field, nil
 }
 
 // Given a partially initialized Field, like one being deserialized from a stationary store, rederive the
