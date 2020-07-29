@@ -11,7 +11,7 @@ import (
 // any plaintext byte buffer.
 func BoxEncrypt(key []byte, plaintext []byte) ([]byte, error) {
 	if len(key) != 32 {
-		return nil, errors.New("")
+		return nil, errors.New("Length of key is not 32 bytes")
 	}
 
 	// get an unsafe reference to pointer
@@ -29,7 +29,7 @@ func BoxEncrypt(key []byte, plaintext []byte) ([]byte, error) {
 // given a ciphertext byte buffer.
 func BoxDecrypt(key []byte, ciphertext []byte) ([]byte, error) {
 	if len(key) != 32 {
-		return nil, errors.New("")
+		return nil, errors.New("Length of key is not 32 bytes")
 	}
 
 	// retrieve nonce from ciphertext, which is appended at the end
