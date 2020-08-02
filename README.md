@@ -2,8 +2,8 @@
 
 [![Actions][actions-badge]][actions-url]
 
-[actions-badge]: https://github.com/ex0dus-0x/binsec/workflows/CI/badge.svg?branch=master
-[actions-url]: https://github.com/ex0dus-0x/binsec/actions
+[actions-badge]: https://github.com/ghostpass/ghostpass/workflows/CI/badge.svg?branch=master
+[actions-url]: https://github.com/ghostpass/ghostpass/actions
 
 Privacy-First Secrets Management Cryptosystem
 
