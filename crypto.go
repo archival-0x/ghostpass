@@ -1,3 +1,4 @@
+// Implements secret-key authentication encryption using LibNacl's Golang interface.
 package ghostpass
 
 import (

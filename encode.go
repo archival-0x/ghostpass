@@ -1,3 +1,5 @@
+// Implements the functionality for performing zero-width encoding and decoding given a corpus
+// and information to hide within.
 package ghostpass
 
 import (

@@ -37,7 +37,7 @@ func Banner() {
 
 `)
     col := color.New(color.FgWhite).Add(color.Underline)
-    col.Printf("\t>> Version: 2.0\n\t>> https://ghostpass.codemuch.tech/\n\t>> %s\n\n", Description)
+    col.Printf("\t>> Version: 2.0\n\t>> https://ghostpass.github.io/\n\t>> %s\n\n", Description)
 }
 
 

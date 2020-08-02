@@ -1,19 +1,19 @@
 # ghostpass
 
+[![Actions][actions-badge]][actions-url]
+
+[actions-badge]: https://github.com/ex0dus-0x/binsec/workflows/CI/badge.svg?branch=master
+[actions-url]: https://github.com/ex0dus-0x/binsec/actions
+
 Privacy-First Secrets Management Cryptosystem
 
-## Project Roadmap
-
-This is still on-going and a work-in-progress.
-
-* [x] Plainsight Distribution
-* [ ] Plausible deniability
+> WARNING: this is experimental software and should not be used in production.
 
 ## Introduction
 
 __Ghostpass__ is a secrets management cryptography scheme that can hide encrypted secrets in cleartext for the purpose of distribution across public mediums. It ensures that your secrets, whether in the form of authentication credentials or actual messages and documents, can appear in plainsight as normal cleartexts, and can be confidently transmitted even in a public medium with potential malicious actors, even those that may act out with coercion to exfiltrate and decrypt it.
 
-Ghostpass is _novel_ in the sense that it applies modern symmetric cryptography towards digital consumer privacy through the use of textual steganography and plausible deniability. However, it should also be considered _novelty_ because it is __NOT__ a full replacement for current cryptographic software, but an ongoing effort to bridge together cryptography and privacy research. I encourage users to criticize, audit and expose shortcomings in order to better understand how these types of implementations can better be harnessed in the space of digital privacy.
+Ghostpass is _novel_ in the sense that it applies modern symmetric cryptography towards digital consumer privacy to mitigate [rubber-hose cryptoanalysis](https://en.wikipedia.org/wiki/Rubber-hose_cryptanalysis). However, it should also be considered _novelty_ because it is __NOT__ a full replacement for current cryptographic software, but an ongoing effort to bridge together cryptography and privacy research. I encourage users to criticize, audit and expose shortcomings in order to better understand how these types of implementations can better be harnessed in the space of digital privacy.
 
 There's quite a bit of password/secrets managers that are out there today, so why even bother with Ghostpass? In order to answer this question, let's take a look at different password managers "models" that already exist, and the problems that plague them:
 
@@ -24,8 +24,10 @@ Ghostpass's implementation aims to create a compromise that doesn't require the 
 
 ## Design
 
-* [Threat Model](https://github.com/ex0dus-0x/ghostpass)
-* [Internal Design](https://github.com/ex0dus-0x/ghostpass)
+For more information regarding
+
+* [Threat Model](https://github.com/ghostpass/ghostpass/blob/master/docs/threat_model.md)
+* [Internal Design](https://github.com/ghostpass/ghostpass/blob/master/docs/internal_design.md)
 
 ## Features
 
@@ -43,16 +45,24 @@ Ghostpass's implementation aims to create a compromise that doesn't require the 
 
 * __Journalists__ - hide secrets amongst corpuses of actual documents, and use plausible deniability to return bogus articles if ever interrogated
 * __Lawyers__ - protect confidentiality of clients and sensitive anecdotes before trial by encrypting them amongst fake ones.
-* __You, a Privacy-Conscious Digital Consumer__
+* __You, a Privacy-Conscious Digital Consumer!__
 
 ## Usage
 
-### Build
+There is on-going support for Ghostpass across different mediums, including the web and chatops. However, Ghostpass can still be used locally through the command line.
 
-The Ghostpacommand-line application and library package can be installed to your host with the following:
+### Command Line
+
+The Ghostpass command line application can be installed locally as follows:
 
 ```
-$ go get github.com/ex0dus-0x/ghostpass/
+$ go get -u github.com/ghostpass/ghostpass/cmd/ghostpass
+```
+
+However, to minimize the exfiltration of information from the user from a misuser, you may also run Ghostpass under a Docker container:
+
+```
+$ docker build .
 ```
 
 To use:
@@ -61,19 +71,13 @@ To use:
 $ ghostpass help
 ```
 
-However, to minimize the exfiltration of information from the user from a misuser, we recommend the usage of a Docker container:
-
-```
-$ docker build .
-```
-
 ## Contributing
 
 To create a new branch for contributions:
 
 ```
 # new feature branch
-$ git remote add upstream https://github.com/ex0dus-0x/ghostpass
+$ git remote add upstream https://github.com/ghostpass/ghostpass
 $ git checkout -b my-branch-name
 
 # do code, do tests, etc

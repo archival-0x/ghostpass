@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goVer: [1.12, 1.13, 1.14]
+
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.goVer }}
+        id: go
+
+      - name: Get deps
+        run: go get -v -t -d ./...
+
+      - name: Format
+        run: gofmt -s -w  ./.../*.go
+
+      - name: Build
+        run: go build -v .
+
+      # TODO: test

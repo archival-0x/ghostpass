@@ -1,3 +1,6 @@
+// Implements the secret-store that interfaces with the majority of functionality, including
+// interacting with fields and notes (TODO), using cryptographic primitives, and implementing the
+// plainsight importing and distribution.
 package ghostpass
 
 import (
@@ -260,14 +263,6 @@ func (ss *SecretStore) GetField(service string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	/*
-	   // decrypt password
-	   pwdstr, err := BoxDecrypt(ss.SymmetricKey, pwd.Bytes())
-	   if err != nil {
-	       return nil, err
-	   }
-	*/
 	pwdstr := pwd.Bytes()
 
 	// concatenate slice with parameters for output
