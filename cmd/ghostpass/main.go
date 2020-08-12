@@ -16,7 +16,7 @@ import (
     "github.com/manifoldco/promptui"
     "github.com/awnumar/memguard"
     "github.com/olekukonko/tablewriter"
-    "github.com/ex0dus-0x/ghostpass"
+    "github.com/ghostpass/ghostpass"
     "golang.org/x/crypto/ssh/terminal"
 )
 
