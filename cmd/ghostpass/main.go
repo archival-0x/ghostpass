@@ -77,18 +77,22 @@ func main() {
             {
                 Name: "init",
                 Category: "Initialization",
-                Usage: "Create a new secret secret store",
+                Usage: "Create a new secret store",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{
+                        Name: "name",
+                        Usage: "Name of secret store to create locally",
+                        Aliases: []string{"n"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
-                    dbname := c.String("dbname")
-                    if dbname == "" {
+                    name := c.String("name")
+                    if name == "" {
                         return errors.New("Name to secret store not specified")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Initializing new secret store `%s` [*]\n\n", dbname)
+                    col.Printf("\n[*] Initializing new secret store `%s` [*]\n\n", name)
 
                     // read master key and store in buffer safely
                     fmt.Printf("> Master Key (will not be echoed): ")
@@ -99,7 +103,7 @@ func main() {
                     }
 
                     // create new secret store
-                    store, err := ghostpass.InitStore(dbname, masterkey)
+                    store, err := ghostpass.InitStore(name, masterkey)
                     if err != nil {
                         return err
                     }
@@ -128,10 +132,10 @@ func main() {
                     }
 
                     for _, f := range files {
-                        dbname := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
+                        name := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
                         col := color.New(color.Underline).Add(color.Bold)
                         fmt.Printf("\t* ")
-                        col.Println(dbname)
+                        col.Println(name)
                     }
                     fmt.Println()
                     return nil
@@ -142,16 +146,20 @@ func main() {
                 Category: "Initialization",
                 Usage: "Completely nuke a secret store given its name",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag {
+                        Name: "name",
+                        Usage: "Name of secret store to delete permanently",
+                        Aliases: []string{"n"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
-                    dbname := c.String("dbname")
-                    if dbname == "" {
+                    name := c.String("name")
+                    if name == "" {
                         return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Destroying secret store `%s` [*]\n\n", dbname)
+                    col.Printf("\n[*] Destroying secret store `%s` [*]\n\n", name)
 
                     // read master key for the secret store
                     fmt.Printf("> Master Key (will not be echoed): ")
@@ -162,7 +170,7 @@ func main() {
                     }
 
                     // open the secret store for deletion
-                    store, err := ghostpass.OpenStore(dbname, masterkey)
+                    store, err := ghostpass.OpenStore(name, masterkey)
                     if err != nil {
                         return err
                     }
@@ -198,18 +206,30 @@ func main() {
                 Category: "Operations",
                 Usage: "Add a new field to the secret store, will overwrite if exists",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
-                    &cli.StringFlag{Name: "username", Aliases: []string{"u"}},
+                    &cli.StringFlag {
+                        Name: "name",
+                        Usage: "Name of secret store to add field to",
+                        Aliases: []string{"n"},
+                    },
+                    &cli.StringFlag{
+                        Name: "service",
+                        Usage: "Name of the service, identifier, key for the field",
+                        Aliases: []string{"s"},
+                    },
+                    &cli.StringFlag{
+                        Name: "username",
+                        Usage: "Username for the service",
+                        Aliases: []string{"u"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
-                    dbname := c.String("dbname")
-                    if dbname == "" {
+                    name := c.String("name")
+                    if name == "" {
                         return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Adding field entry to secret store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Adding field entry to secret store `%s` [*]\n", name)
 
                     // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
@@ -220,7 +240,7 @@ func main() {
                     }
 
                     // open the secret store for adding the new field
-                    store, err := ghostpass.OpenStore(dbname, masterkey)
+                    store, err := ghostpass.OpenStore(name, masterkey)
                     if err != nil {
                         return err
                     }
@@ -296,17 +316,25 @@ func main() {
                 Aliases: []string{"rm"},
                 Usage: "Remove a field from the secret store",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
+                    &cli.StringFlag{
+                        Name: "name",
+                        Usage: "Name of the secret store to remove field from",
+                        Aliases: []string{"n"},
+                    },
+                    &cli.StringFlag{
+                        Name: "service",
+                        Usage: "Name of the service that identifies the field to delete",
+                        Aliases: []string{"s"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
-                    dbname := c.String("dbname")
-                    if dbname == "" {
+                    name := c.String("name")
+                    if name == "" {
                         return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Removing field entry from secret store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Removing field entry from secret store `%s` [*]\n", name)
 
                     // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
@@ -317,7 +345,7 @@ func main() {
                     }
 
                     // open the secret store for removing the field
-                    store, err := ghostpass.OpenStore(dbname, masterkey)
+                    store, err := ghostpass.OpenStore(name, masterkey)
                     if err != nil {
                         return err
                     }
@@ -356,17 +384,25 @@ func main() {
                 Category: "Operations",
                 Usage: "Decrypt and view a specific field from the secret store",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.StringFlag{Name: "service", Aliases: []string{"s"}},
+                    &cli.StringFlag{
+                        Name: "name",
+                        Usage: "Name of the secret store to view field in",
+                        Aliases: []string{"n"},
+                    },
+                    &cli.StringFlag{
+                        Name: "service",
+                        Usage: "Name of the service that identifies the field to view",
+                        Aliases: []string{"s"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
-                    dbname := c.String("dbname")
-                    if dbname == "" {
+                    name := c.String("name")
+                    if name == "" {
                         return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Retrieving field entry from secret store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Retrieving field entry from secret store `%s` [*]\n", name)
 
                     // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
@@ -377,7 +413,7 @@ func main() {
                     }
 
                     // open the secret store for adding the new field
-                    store, err := ghostpass.OpenStore(dbname, masterkey)
+                    store, err := ghostpass.OpenStore(name, masterkey)
                     if err != nil {
                         return err
                     }
@@ -416,16 +452,20 @@ func main() {
                 Category: "Operations",
                 Usage: "List all available fields in a secret store",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
+                    &cli.StringFlag{
+                        Name: "name",
+                        Usage: "Name of secret store to list all fields in",
+                        Aliases: []string{"n"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
-                    dbname := c.String("dbname")
-                    if dbname == "" {
+                    name := c.String("name")
+                    if name == "" {
                         return errors.New("Name to secret store not specified.")
                     }
 
                     col := color.New(color.FgWhite).Add(color.Bold)
-                    col.Printf("\n[*] Retrieving all fields from secret store `%s` [*]\n", dbname)
+                    col.Printf("\n[*] Retrieving all fields from secret store `%s` [*]\n", name)
 
                     // read master key for the secret store
                     fmt.Printf("\n> Master Key (will not be echoed): ")
@@ -436,7 +476,7 @@ func main() {
                     }
 
                     // open the secret store for adding the new field
-                    store, err := ghostpass.OpenStore(dbname, masterkey)
+                    store, err := ghostpass.OpenStore(name, masterkey)
                     if err != nil {
                         return err
                     }
@@ -455,7 +495,11 @@ func main() {
                 Category: "Distribution",
                 Usage: "Imports a new password database given a plainsight file",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "corpus", Aliases: []string{"c"}},
+                    &cli.StringFlag{
+                        Name: "corpus",
+                        Usage: "Path to previously encoded plainsight file to import",
+                        Aliases: []string{"c"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
                     corpus := c.String("corpus")
@@ -498,13 +542,25 @@ func main() {
                 Category: "Distribution",
                 Usage: "Generates a plainsight file for distribution from current state",
                 Flags: []cli.Flag{
-                    &cli.StringFlag{Name: "dbname", Aliases: []string{"n"}},
-                    &cli.StringFlag{Name: "corpus", Aliases: []string{"c"}},
-                    &cli.StringFlag{Name: "outfile", Aliases: []string{"o"}},
+                    &cli.StringFlag{
+                        Name: "name",
+                        Usage: "Name of the secret store to export for distribution",
+                        Aliases: []string{"n"},
+                    },
+                    &cli.StringFlag{
+                        Name: "corpus",
+                        Usage: "Path to a file that can be encoded for distribution",
+                        Aliases: []string{"c"},
+                    },
+                    &cli.StringFlag{
+                        Name: "outfile",
+                        Usage: "Output path for the encoded file",
+                        Aliases: []string{"o"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
-                    dbname := c.String("dbname")
-                    if dbname == "" {
+                    name := c.String("name")
+                    if name == "" {
                         return errors.New("Name to secret store not specified.")
                     }
 
@@ -516,7 +572,7 @@ func main() {
                     // if output file name not set, set a default one to cwd
                     var outfile string
                     if c.String("outfile") == "" {
-                        outfile = "plainsight_" + dbname + ".out"
+                        outfile = "plainsight_" + name + ".out"
                     } else {
                         outfile = c.String("outfile")
                     }
@@ -529,7 +585,7 @@ func main() {
                     }
 
                     // open the secret store for adding the new field
-                    store, err := ghostpass.OpenStore(dbname, masterkey)
+                    store, err := ghostpass.OpenStore(name, masterkey)
                     if err != nil {
                         return err
                     }
