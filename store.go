@@ -66,6 +66,12 @@ type SecretStore struct {
 	// internal state of the store with all the available secrets
 	Fields map[string]*Field `json:"fields"`
 
+    // represents the number of deniable secrets
+    EntrySize int `json:entrysize`
+
+    // stores the deniable entries to be created per field, if not 0
+    DeniableEntries map[string]*Field  `json:entries`
+
 	// TODO: notes for genercized information to distribute
 }
 
@@ -77,7 +83,7 @@ type SecretStore struct {
 
 // Initializes a new `SecretStore` given a name and master symmetric key that is secured. Will
 // create a new store if name does not exist, otherwise will read and return the existing one.
-func InitStore(name string, pwd *memguard.Enclave) (*SecretStore, error) {
+func InitStore(name string, pwd *memguard.Enclave, entrysize int) (*SecretStore, error) {
 
 	// initialize path to database, return empty buffer
 	dbpath := fmt.Sprintf("%s/%s.gp", MakeWorkspace(), name)
@@ -105,13 +111,23 @@ func InitStore(name string, pwd *memguard.Enclave) (*SecretStore, error) {
 	// destroy original plaintext key
 	defer key.Destroy()
 
+    // determine if we need to create space for deniable entries
+    var entries map[string]*Field
+    if entrysize == 0 {
+        entries = make(map[string]*Field)
+    } else {
+        entries = nil
+    }
+
 	// if not, create an empty SecretStore
 	return &SecretStore{
-		Version:      Version,
-		StoreState:   StoreStationary,
-		Name:         name,
-		SymmetricKey: checksum[:],
-		Fields:       make(map[string]*Field),
+		Version:            Version,
+		StoreState:         StoreStationary,
+		Name:               name,
+		SymmetricKey:       checksum[:],
+		Fields:             make(map[string]*Field),
+        EntrySize:          entrysize,
+        DeniableEntries:    entries,
 	}, nil
 }
 
