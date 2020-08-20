@@ -24,8 +24,8 @@ jobs:
       - name: Get deps
         run: go get -v -t -d ./...
 
-      - name: Format
-        run: gofmt -s -w /*.go
+        #- name: Format
+        #run: gofmt -s -w ./../../*.go
 
       - name: Build
         run: go build -v .
