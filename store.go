@@ -66,11 +66,11 @@ type SecretStore struct {
 	// internal state of the store with all the available secrets
 	Fields map[string]*Field `json:"fields"`
 
-    // represents the number of deniable secrets
-    EntrySize int `json:entrysize`
+	// represents the number of deniable secrets
+	EntrySize int `json:"entrysize"`
 
-    // stores the deniable entries to be created per field, if not 0
-    DeniableEntries map[string]*Field  `json:entries`
+	// stores the deniable entries to be created per field, if not 0
+	DeniableEntries map[string][]*Field `json:"entries"`
 
 	// TODO: notes for genercized information to distribute
 }
@@ -111,23 +111,23 @@ func InitStore(name string, pwd *memguard.Enclave, entrysize int) (*SecretStore,
 	// destroy original plaintext key
 	defer key.Destroy()
 
-    // determine if we need to create space for deniable entries
-    var entries map[string]*Field
-    if entrysize == 0 {
-        entries = make(map[string]*Field)
-    } else {
-        entries = nil
-    }
+	// determine if we need to create space for deniable entries
+	var entries map[string][]*Field
+	if entrysize == 0 {
+		entries = make(map[string][]*Field)
+	} else {
+		entries = nil
+	}
 
 	// if not, create an empty SecretStore
 	return &SecretStore{
-		Version:            Version,
-		StoreState:         StoreStationary,
-		Name:               name,
-		SymmetricKey:       checksum[:],
-		Fields:             make(map[string]*Field),
-        EntrySize:          entrysize,
-        DeniableEntries:    entries,
+		Version:         Version,
+		StoreState:      StoreStationary,
+		Name:            name,
+		SymmetricKey:    checksum[:],
+		Fields:          make(map[string]*Field),
+		EntrySize:       entrysize,
+		DeniableEntries: entries,
 	}, nil
 }
 
@@ -234,18 +234,27 @@ func (ss *SecretStore) AddField(service string, username string, pwd *memguard.E
 	return nil
 }
 
-// Given an existing field, attempt to encrypt a deniable credential pair, an derive a "deniability" key for
-// plausible deniability. (TODO)
+// Given an existing field that supports deniable entries, check and add a new deniable field to the secret store corresponding
+// to the same service. Adds only once, and should be called iteratively until the threshold is met.
 func (ss *SecretStore) AddDeniableField(service string, username string, pwd *memguard.Enclave) error {
-	// check to see if the field exists
+	// check to see if store is configured to add deniable entries
+	if ss.DeniableEntries == nil {
+		return errors.New("store not configured to use deniable entries")
+	}
+
+	// check to see if the field exists, since we cannot create deniable entries for something that isnt original
 	if !ss.FieldExists(service) {
 		return errors.New("cannot find entry given the service name provided")
 	}
 
-	// TODO
-	// if exists, update it with the deniable secret
-	//field.AddDeniableSecret(username, pwd)
-	//ss.Fields[service] = field
+	// initialize a new field from the given parameters
+	field, err := NewField(ss.SymmetricKey, username, pwd)
+	if err != nil {
+		return err
+	}
+
+	// add deniable entry for that specific key
+	_ = append(ss.DeniableEntries[service], field)
 	return nil
 }
 

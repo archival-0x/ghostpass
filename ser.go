@@ -21,6 +21,7 @@ func StationaryUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 		StoreState string            `json:"state"`
 		Name       string            `json:"name"`
 		Fields     map[string]*Field `json:"fields"`
+		EntrySize  int               `json:"entrysize"`
 	}
 	err := json.Unmarshal(serialized, &ss)
 	if err != nil {
