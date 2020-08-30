@@ -17,11 +17,12 @@ func StationaryUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 
 	// turn the serialized JSON back into a partially initialized state for a SecretStore
 	var ss struct {
-		Version    int               `json:"version"`
-		StoreState string            `json:"state"`
-		Name       string            `json:"name"`
-		Fields     map[string]*Field `json:"fields"`
-		EntrySize  int               `json:"entrysize"`
+		Version    int                           `json:"version"`
+		StoreState string                        `json:"state"`
+		Name       string                        `json:"name"`
+		Fields     map[string]*Field             `json:"fields"`
+		EntrySize  int                           `json:"entrysize"`
+        DeniableEntries map[string][]*Field      `json:"entries"`
 	}
 	err := json.Unmarshal(serialized, &ss)
 	if err != nil {
@@ -39,11 +40,13 @@ func StationaryUnmarshal(checksum [32]byte, serialized []byte) (*SecretStore, er
 
 	// return the SecretStore as if nothing changed
 	return &SecretStore{
-		Version:      ss.Version,
-		StoreState:   ss.StoreState,
-		Name:         ss.Name,
-		SymmetricKey: checksum[:],
-		Fields:       ss.Fields,
+		Version:            ss.Version,
+		StoreState:         ss.StoreState,
+		Name:               ss.Name,
+		SymmetricKey:       checksum[:],
+		Fields:             ss.Fields,
+        EntrySize:          ss.EntrySize,
+        DeniableEntries:    ss.DeniableEntries,
 	}, nil
 }
 
@@ -110,6 +113,8 @@ func PlainsightUnmarshal(checksum [32]byte, encoded []byte) (*SecretStore, error
 	}
 
 	// return the SecretStore as if nothing changed
+    // we do not include the deniable entries attributes, since the user may have used a
+    // bogus symmetric key.
 	return &SecretStore{
 		Version:      ss.Version,
 		StoreState:   StoreStationary,
@@ -148,15 +153,15 @@ func (ss *SecretStore) PlainsightMarshal() ([]byte, error) {
 
 	// serialize into a byte array for compression
 	data, err := json.Marshal(&struct {
-		Version    int               `json:"version"`
-		StoreState string            `json:"state"`
-		Name       string            `json:"name"`
-		Fields     map[string][]byte `json:"fields"`
+		Version    int                      `json:"version"`
+		StoreState string                   `json:"state"`
+		Name       string                   `json:"name"`
+		Fields     map[string][]byte        `json:"fields"`
 	}{
-		Version:    Version,
-		StoreState: StorePlainsight,
-		Name:       ss.Name,
-		Fields:     encfields,
+		Version:            Version,
+		StoreState:         StorePlainsight,
+		Name:               ss.Name,
+		Fields:             encfields,
 	})
 
 	if err != nil {
