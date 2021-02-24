@@ -84,12 +84,20 @@ func main() {
                         Usage: "Name of secret store to create locally",
                         Aliases: []string{"n"},
                     },
+                    &cli.IntFlag{
+                        Name: "entries",
+                        Usage: "Number of deniable entries to also create for each field added",
+                        Aliases: []string{"e"},
+                    },
                 },
                 Action: func(c *cli.Context) error {
                     name := c.String("name")
                     if name == "" {
                         return errors.New("Name to secret store not specified")
                     }
+
+                    // deniable entries is optional
+                    entries := c.Int("entries")
 
                     col := color.New(color.FgWhite).Add(color.Bold)
                     col.Printf("\n[*] Initializing new secret store `%s` [*]\n\n", name)
@@ -103,7 +111,7 @@ func main() {
                     }
 
                     // create new secret store
-                    store, err := ghostpass.InitStore(name, masterkey)
+                    store, err := ghostpass.InitStore(name, masterkey, entries)
                     if err != nil {
                         return err
                     }
